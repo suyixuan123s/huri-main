@@ -11,5 +11,8 @@ __pycache__/
 Thumbs.db
 
 
-huri/components/exe/best.pt
+*.pt
+
+
+
 
