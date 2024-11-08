@@ -1,0 +1,103 @@
+defaults:
+  - _self_
+  - override hydra/hydra_logging: none
+  - override hydra/job_logging: none
+
+num_actor: 7
+num_difficult: 100
+#num_reanalyzer: 7
+num_reanalyzer: 5
+num_reanalyzer_added: 6
+num_reanalyzer_added_level: 38
+toggle_actor_debug: False
+toggle_reanalyzer_debug: False
+toggle_replay_buffer_2: False
+
+rl:
+  # learning rate
+  lr: 1e-3
+  lr_dcay: 0.90
+  # batch size
+  batch_sz: 64
+  # decay factor
+  gamma: .99
+  # epsilon greedy
+  eps_max: 1
+  eps_min: .15
+  #  eps_decay: 1e-6
+  eps_decay: 3e-3
+  # n-step TD error
+  n_step: 1
+  # randomizer seed
+  seed: 999
+  # DQN parameters
+  ## target network update frequency
+  update_freq: 300
+  ## soft update
+  tau: .95
+  # Replay buffer parameters
+  replay_sz: 60e5
+  init_replay_num: 5e4
+  beta_decay_step: 60000
+  beta_init: .6
+  # Actor
+  reset_num: 100
+  reset_num2: 200
+  reset_evolve: 24
+  # device cpu or cuda
+  device: 'cuda'
+  actor_device: 'cpu'
+  # Ape-x DQN
+  ## periodically send data to replay.
+  send_period: 10
+  # save checkpoint
+  ## period
+  save_period: 500
+  #
+  store_replay_buffer: True
+  store_reanalyzer: True
+  # icm
+  forward_scale: 1
+  inverse_scale: 1
+  intrinsic_scale: 0.9
+  # RND and local planning
+  H_buffer_sz: 2e4
+  p_init: 0.5
+  H_batch_sz: 64
+  toggle_H_buffer: False
+  pop_buff_len: 10
+
+ddqn:
+  num_filters: 48
+  num_res_block: 6
+  num_fc_units: 128
+  num_out_cnn_layers: 30
+
+eval:
+  eval_num: 200
+  reset_multiplier: 1.5
+  reset_multiplier2: 3
+  reset_evolve: 24
+  eval_interval: 20
+  device: 'cuda'
+  state_level: 1
+  class_level: 1
+  pass_rate: .97
+
+env:
+  rack_sz: [ 5,10 ]
+  goal_pattern: [ [ 1, 1, 0, 0, 2, 2, 0, 0, 3, 3, ],
+                  [ 1, 1, 0, 0, 2, 2, 0, 0, 3, 3, ],
+                  [ 1, 1, 0, 0, 2, 2, 0, 0, 3, 3, ],
+                  [ 1, 1, 0, 0, 2, 2, 0, 0, 3, 3, ],
+                  [ 1, 1, 0, 0, 2, 2, 0, 0, 3, 3, ] ]
+  num_tube_class: 3
+  seed: 888
+  toggle_curriculum: True
+  # init state level
+  init_state_level: 30
+  init_class_level: 1
+
+
+
+

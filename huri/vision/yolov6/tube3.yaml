@@ -1,0 +1,11 @@
+# train and val datasets (image directory or *.txt file with image paths)
+train: D:\chen\yolo_huri\paper\20220227_181319\images\train/
+val: D:\chen\yolo_huri\paper\20220227_181319\images\val/
+
+# number of classes
+nc: 2
+
+# class names
+names: [ 'rack 1', 'blue cap']
+
+# python train.py --img-size 1376 --batch-size 2 --epochs 500 --data ./data/tube.yaml --cfg ./models/tube.yaml --weights yolov5x.pt

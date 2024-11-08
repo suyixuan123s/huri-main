@@ -1,0 +1,65 @@
+defaults:
+  - _self_
+  - override hydra/hydra_logging: none
+  - override hydra/job_logging: none
+#num_actor: 2
+#num_reanalyzer: 3
+#toggle_actor_debug: False
+#toggle_reanalyzer_debug: False
+# device cpu or cuda
+device: '0'
+torch_seed: 123
+numpy_seed: 777
+# load pretrained data
+load_checkpoint: False
+load_checkpoint_path: null
+# training
+num_actors: 40
+batch: 32
+num_train_steps: 700000
+checkpoint_frequency: 100
+checkpoint_dir: 'E:\huri_shared\huri\learning\method\AlphaZero\run\checkpoints/'
+train_csv_file: 'E:\huri_shared\huri\learning\method\AlphaZero\run/log/train.csv'
+eval_csv_file: 'E:\huri_shared\huri\learning\method\AlphaZero\run/log/eval.csv'
+# 'Delay (in seconds) before training on next batch samples.'
+train_delay: .9
+
+MCTS:
+  c_puct_base: 19652
+  c_puct_init: 1.25
+  warm_up_steps: 100
+  num_simulations: 200
+  num_parallel: 1
+  gamma: 0.99
+  reset_num: 20
+
+replay:
+  capacity: 500
+optim:
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 1e-4
+  lr_decay_milestones: [ 400000, 600000 ]
+  lr_decay_gamma: 0.1
+eval:
+  eval_num: 50
+  reset_num: 5
+  eval_interval: 90
+  device: 'cuda'
+  state_level: 2
+  class_level: 2
+env:
+  rack_sz: [ 3,3 ]
+  num_tube_class: 2
+  seed: 888
+  num_obs_history: 4
+  toggle_curriculum: True
+  toggle_goal_fixed: False
+  # init state level
+  init_state_level: 2
+  init_class_level: 2
+reanalyzer:
+  toggle_her_replay: True
+
+
+

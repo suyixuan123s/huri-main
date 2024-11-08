@@ -1,0 +1,16 @@
+num_actors: 16 #16
+data_num: 10000 #10000
+train_level_max: 15 #15
+env:
+  rack_sz: [ 4,4 ]
+  num_tube_class: 4
+  seed: 888
+  num_obs_history: 4
+  toggle_curriculum: True
+  toggle_goal_fixed: False
+  # init state level
+  init_state_level: 2
+  init_class_level: 2
+
+
+

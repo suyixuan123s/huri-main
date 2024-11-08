@@ -1,0 +1,55 @@
+num_actor: 10
+num_difficult: 10
+num_reanalyzer: 6
+toggle_actor_debug: false
+toggle_reanalyzer_debug: false
+rl:
+  lr: 0.0001
+  batch_sz: 64
+  gamma: 0.99
+  eps_max: 1
+  eps_min: 0.15
+  eps_decay: 0.0001
+  seed: 123
+  update_freq: 500
+  tau: 0.95
+  replay_sz: 700000.0
+  beta_decay_step: 200000
+  reset_num: 100
+  device: cuda
+  actor_device: cpu
+  send_period: 40
+  save_period: 100
+  store_replay_buffer: true
+  store_reanalyzer: true
+  forward_scale: 1
+  inverse_scale: 1
+  intrinsic_scale: 0.9
+  H_buffer_sz: 20000.0
+  p_init: 0.5
+  H_batch_sz: 64
+  toggle_H_buffer: false
+ddqn:
+  num_filters: 32
+  num_res_block: 10
+  num_fc_units: 128
+eval:
+  eval_num: 300
+  reset_num: 1.5
+  eval_interval: 30
+  device: cpu
+  state_level: 1
+  class_level: 1
+  pass_rate: 0.99
+env:
+  rack_sz:
+  - 3
+  - 6
+  num_tube_class: 1
+  seed: 888
+  toggle_curriculum: true
+  toggle_goal_fixed: false
+  init_state_level: 1
+  init_class_level: 1
+reanalyzer:
+  toggle_her_replay: true

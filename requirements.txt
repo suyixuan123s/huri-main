@@ -1,0 +1,52 @@
+# fundamental package
+# Download numpy+mkl https://www.lfd.uci.edu/~gohlke/pythonlibs/#_numpy
+numpy==1.22.4
+pandas
+panda3d
+matplotlib
+scikit-learn>=0.23.2 # vital?
+shapely>=1.7.1
+Rtree>=0.9.7
+grpcio==1.51.1
+# grpcio-tools==1.51.1
+networkx>=2.5.1
+# pyrealsense2
+ray[all]
+dm_tree
+ultralytics==8.0.220
+protobuf==3.20.3
+gymnasium
+pyreadline
+Pmw
+# torch   # install the GPU version
+# torchvision #  install the GPU version
+
+# vision package
+opencv-python==4.6.0.66 # optional, required by vision
+opencv-contrib-python==4.6.0.66 # optional, required by vision
+open3d>=0.15.1
+
+# machine learning package
+# GOTO https://pytorch.org/ to install PyTorch First
+# pfrl # opional, only if use pfrl module
+# require by YOLOv5
+Pillow>=7.1.2
+PyYAML>=5.3.1
+requests>=2.23.0
+scipy>=1.4.1
+tqdm>=4.41.0
+# logging
+tensorboard>=2.4.1
+# plotting
+seaborn>=0.11.0
+thop  # FLOPs computation
+
+# Extra
+numba # use for improve the speed by JIT
+setproctitle
+colorlog
+ruamel.yaml
+
+
+# Need manually install
+# gym

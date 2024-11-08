@@ -1,0 +1,76 @@
+defaults:
+  - _self_
+  - override hydra/hydra_logging: none
+  - override hydra/job_logging: none
+
+num_actor: 11
+num_difficult: 7
+num_reanalyzer: 5
+toggle_actor_debug: False
+toggle_reanalyzer_debug: False
+
+rl:
+  # learning rate
+  lr: 1e-4
+  # batch size
+  batch_sz: 64
+  # decay factor
+  gamma: .99
+  # epsilon greedy
+  eps_max: 1
+  eps_min: .15
+  #  eps_decay: 1e-6
+  eps_decay: 5e-5
+  # randomizer seed
+  seed: 123
+  # DQN parameters
+  ## target network update frequency
+  update_freq: 500
+  ## soft update
+  tau: .95
+  # Replay buffer parameters
+  replay_sz: 15e5
+  beta_decay_step: 200000
+  # Actor
+  reset_num: 100
+  # device cpu or cuda
+  device: 'cuda'
+  actor_device: 'cpu'
+  # Ape-x DQN
+  ## periodically send data to replay.
+  send_period: 10
+  # save checkpoint
+  ## period
+  save_period: 500
+  #
+  store_replay_buffer: True
+  store_reanalyzer: True
+  # icm
+  forward_scale: 1
+  inverse_scale: 1
+  intrinsic_scale: 0.9
+
+eval:
+  eval_num: 300
+  reset_num: 1.5
+  eval_interval: 90
+  device: 'cpu'
+  state_level: 1
+  class_level: 1
+  pass_rate: .99
+
+env:
+  rack_sz: [ 5,10 ]
+  num_tube_class: 1
+  seed: 888
+  toggle_curriculum: True
+  toggle_goal_fixed: False
+  # init state level
+  init_state_level: 2
+  init_class_level: 1
+
+reanalyzer:
+  toggle_her_replay: True
+
+
+

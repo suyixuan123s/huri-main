@@ -1,0 +1,33 @@
+#num_actor: 2
+#num_reanalyzer: 3
+#toggle_actor_debug: False
+#toggle_reanalyzer_debug: False
+# device cpu or cuda
+device: '0'
+torch_seed: 123
+numpy_seed: 777
+train_batch: 128
+test_batch: 32
+training_dataset_path: 'demo_training_data_4_4.pkl'
+epoch: 100
+optim:
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 1e-4
+  lr_decay_milestones: [ 10, 30, 50, 70 ,90 ]
+  lr_decay_gamma: 0.1
+env:
+  rack_sz: [ 4,4 ]
+  num_tube_class: 4
+  seed: 888
+  num_obs_history: 4
+  toggle_curriculum: True
+  toggle_goal_fixed: False
+  # init state level
+  init_state_level: 2
+  init_class_level: 2
+reanalyzer:
+  toggle_her_replay: True
+
+
+

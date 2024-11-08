@@ -1,0 +1,22 @@
+syntax = "proto3";
+package RemoteExecuter;
+
+service RemoteExecuter {
+  rpc run_motion (MotionBatch) returns (Status) {}
+}
+
+message Empty {
+}
+
+
+message MotionBatch {
+  bytes data = 1;
+}
+
+message Status {
+  enum StatusValue {
+    ERROR = 0;
+    DONE = 1;
+  }
+  StatusValue value = 1;
+}
