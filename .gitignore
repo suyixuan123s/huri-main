@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-.nfs*
-
 # compilation and distribution
 __pycache__
 _ext
@@ -49,4 +46,6 @@ package-lock.json
 
 # Virtual environment
 venv/
+task_planning/
+
 
