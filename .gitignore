@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .nfs*
 
 # compilation and distribution
@@ -48,3 +49,4 @@ package-lock.json
 
 # Virtual environment
 venv/
+
