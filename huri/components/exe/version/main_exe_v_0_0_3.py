@@ -99,9 +99,11 @@ def task_planning(tube_rack: TubeRack, solver: D3QNSolver, condition_set, infeas
                                           infeasible_action_dict=infeasible_action_dict,
                                           max_iter=800,
                                           toggle_show=False)
+
     task_sols = ArrangeTubeSolSeq(rack=tube_rack,
                                   solution=solution,
                                   tf=tube_rack.get_homomat())
+
     ##### FOR LOGGING
     # et = time.time()
     # write_to_csv(LOGGER, [
@@ -129,11 +131,13 @@ def vision_system(detector: TestTubeDetector,
                   debug_filepath=None,
                   debug_program=DEBUG_PROGRAM) -> (TubeRack, np.ndarray):
     toggle_debug = True if debug_filepath is not None else False
+
     ##### FOR LOGGING
     st = time.time()
     save_path = WORK_DIRECTORY_VISION.joinpath(
         f'VISION_DATA_ITER_{ITERATION_NUM[0]}_{VISION_SYSTEM_LOCAL_COUNTER[0]}.pkl')
     #####
+
     # capture the data through vision sensor
     if debug_program:
         filename = fs.workdir / "data" / "vision_exp" / "20231130-163116.pkl"
@@ -144,6 +148,7 @@ def vision_system(detector: TestTubeDetector,
                                                   save_path=save_path,
                                                   toggle_save=False,
                                                   toggle_debug=toggle_debug, )  # TODO revise debug back to DEBUG
+
     detected_test_tubes, tube_rack, rack_tf, yolo_img = detector.analyze_scene(rack_proto=Rack_Hard_Proto,
                                                                                pcd=pcd,
                                                                                texture_img=img[:, :, 0],
@@ -187,6 +192,7 @@ def main(open_jaw_width=.034,
          VISION_FEEDBACK_INTERVAL=3, ):
     # init the simulation robot
     yumi_robot = ym.Yumi(enable_cc=True)
+
     # init the pick and place planner
     num_workers = 6
     if not DEBUG_PROGRAM:
@@ -197,7 +203,6 @@ def main(open_jaw_width=.034,
 
     # Simulation Environment
     PickPlacePlanner_CR.RRT_EXT_DIS = rrt_ext_dis
-
     base = wd.World(cam_pos=[2, 0, 1.5], lookat_pos=[0, 0, .2])
 
     collision_box_for_rrt = cm.gen_box(extent=[5, 5, .12], homomat=np.eye(4))
@@ -217,7 +222,7 @@ def main(open_jaw_width=.034,
         yumi_robot.fk('rgt_arm', yumi_con.get_jnt_values('rgt_arm'))
         yumi_robot.fk('lft_arm', yumi_con.get_jnt_values('lft_arm'))
 
-        # setup the collision model for phoxi camera
+    # setup the collision model for phoxi camera
     camera_obs = gen_camera_obs()
     camera_obs.attach_to(base)
 
@@ -241,6 +246,7 @@ def main(open_jaw_width=.034,
 
     condition_set = np.ones(([*GOAL_PATTERN.shape[:2], 6]), dtype=int)
     infeasible_action_dict = {}
+
     # init
     animation_cnt = 0
     need_vision_feedback = False
@@ -256,6 +262,7 @@ def main(open_jaw_width=.034,
         # VISION_SYSTEM_LOCAL_COUNTER[0] = 0
         # MOTION_PLANNING_SOL_LOCAL_COUNTER[0] = 0
         #######
+
         if not task_solver.is_state_valid(tube_rack.rack_status):
             raise Exception("The state contains unsolvable patterns!")
 
@@ -265,6 +272,7 @@ def main(open_jaw_width=.034,
         #     if np.sum(
         #             task_solver.get_slot_satisfied_constraints(tube_rack.rack_status, _) * slot_maps[_[0], _[1]]) == 0:
         #         infeasible_actions += task_solver.get_all_infeasible_actions_coord(_)
+
         task_sols = task_planning(tube_rack=tube_rack,
                                   solver=task_solver,
                                   condition_set=condition_set,
@@ -279,16 +287,20 @@ def main(open_jaw_width=.034,
             ####### FOR LOGGING
             # MOTION_PLANNING_SOL_LOCAL_COUNTER[0] += 1
             #####################
+
             print(f"------- Remaining unsolved path length is {sol_length - sol_id - 1} -------")
             print_with_border("Rack State matrix", width=38)
             print(text_pd(tube_rack.rack_status))
+
             # generate and execute the pick and place motions
             common_grasp_iter_info = None
             is_replanning_flag = False
             rack_state_history.append(tube_rack.rack_status.copy())
+
             # moved tube
             moved_tube = sol.tube
             moved_tube_cm = moved_tube.gen_collision_model()
+
             # get grasp of moved tube
             if grasp_cache_dict.get(moved_tube.type, None) is None:
                 grasp_cache_dict[moved_tube.type] = fs.load_json(path=moved_tube.grasps_path)
@@ -305,11 +317,14 @@ def main(open_jaw_width=.034,
                               f"            init coordinate is {init_slot_id}"
                               f"              goal coordinate is {goal_slot_id}"
                               f"              Number of grasps: {len(grasp_info_list)}", width=38)
+
             ### FOR LOGGING
             # MOTION_PLANNING_LOCAL_COUNTER[0] = 0
             ###################
+
             for _ in range(retry_num):
                 start_conf = yumi_con.get_jnt_values(component_name)
+
                 if start_conf is None:
                     start_conf = yumi_robot_arm.homeconf
                 ### FOR LOGGING
@@ -318,6 +333,7 @@ def main(open_jaw_width=.034,
                 #                                        f'_{MOTION_PLANNING_SOL_LOCAL_COUNTER[0]}_{MOTION_PLANNING_LOCAL_COUNTER[0]}.pkl')
                 # st = time.time()
                 ####################
+
                 animation_cnt += 1
                 is_retry = False
                 # test tubes' collision model
@@ -330,14 +346,17 @@ def main(open_jaw_width=.034,
 
                 insert_direction = sol.insert_direction
                 grasp_direction = sol.grasp_direction
+
                 # up distance
                 tube_rack_obs_cm = tube_rack.gen_collision_model()
                 current_state = tube_rack.rack_status.copy()
                 grasp_info_list = grasp_filter(current_state, init_slot_id, tube_rack, grasp_info_list)
                 feasible_ranges_rad = get_feasible_ranges_rad(sol.goal_rack_status, goal_slot_id)
+
                 # planning the motion
                 print("Need vision feedback:", need_grasp_vision_feedback,
                       (need_vision_feedback and is_vision_feedback))
+
                 start2pickapproach_motion_seg, pickapproach_motion_seg, pickdepart_motion_seg, \
                     pickdepart2placeapproach_motion_seg, placeapproach_motion_seg, placedepart_motion_seg, \
                     placedepart2goal_motion_seg, common_grasp_iter_info, is_pick_feasible, is_place_feasible = \
@@ -370,6 +389,7 @@ def main(open_jaw_width=.034,
                                                          # toggle_debug=True,
                                                          # logger=exe_logger
                                                          )
+
                 need_grasp_vision_feedback = False
                 et = time.time()
                 motion_data = {"name": "motion planning",
@@ -383,6 +403,7 @@ def main(open_jaw_width=.034,
                 # planning success
                 exe_motion_batch = None
                 animation_batch = None
+
                 ### FOR LOGGING
                 # write_to_csv(LOGGER, [
                 #     ('timestamp', get_time_stamp(), '%1s'),
@@ -401,6 +422,7 @@ def main(open_jaw_width=.034,
                 #                save_path,
                 #                reminder=False)
                 ###################
+
                 if start2pickapproach_motion_seg is not None:
                     print("---" * 17)
                     print("Planning Successfully!")
@@ -443,6 +465,7 @@ def main(open_jaw_width=.034,
                     else:
                         is_exec_succ, exe_code = yumi_con.exe_pick_and_place_motion(motion_batch=exe_motion_batch,
                                                                                     speed_n_place=exe_speed, )
+
                         # execution failed
                         if not is_exec_succ:
                             # yumi_con.open_gripper(component_name)
@@ -469,6 +492,7 @@ def main(open_jaw_width=.034,
                                     sol = task_sols.current
                                     # retry
                                     is_retry = True
+
                                 # TODO examine if the pattern is the same, otherwise go back to task planning
                                 # is_replanning_flag =True
                             if not is_exec_succ and exe_code == INSERT_FAILURE_ERR:
@@ -488,6 +512,7 @@ def main(open_jaw_width=.034,
                                     feedback_save_path = WORK_DIRECTORY_MP.joinpath(
                                         f'INSERTION_FEEDBACK_{ITERATION_NUM[0]}'
                                         f'_{INSERTION_FEEDBACK_COUNTER[0]}.pkl')
+
                                     ### FOR LOGGING
                                     # write_to_csv(LOGGER, [
                                     #     ('timestamp', get_time_stamp(), '%1s'),
@@ -505,6 +530,7 @@ def main(open_jaw_width=.034,
                                     #                feedback_save_path,
                                     #                reminder=False)
                                     #########################################
+
                                     yumi_con._place_contactL_torque = .03
                                     is_exec_succ, exe_code = yumi_con.exe_pick_and_place_motion(
                                         motion_batch=exe_motion_batch,
@@ -519,6 +545,7 @@ def main(open_jaw_width=.034,
                                 is_replanning_flag = False
                                 tube_rack.remove_slot(init_slot_id)
                                 tube_rack.insert_tube(goal_slot_id, moved_tube)
+
                         # execute successfully
                         else:
                             # tube rack operation
@@ -536,6 +563,7 @@ def main(open_jaw_width=.034,
                                                                   hnd_name=component_name,
                                                                   obs_list=obs_testubes_cmlist, ),
                                                     ele_name=motion_seg.name)
+
                             if need_vision_feedback and is_vision_feedback:
                                 print("Execution successfully")
                                 ######### FOR LOGGINING
@@ -551,6 +579,7 @@ def main(open_jaw_width=.034,
                                     print("Finished")
                                     # fs.dump_pickle(DEBUG_CACHE, f"{__VERSION__}_{time.strftime('%Y%m%d-%H%M%S')}.pkl")
                                     exit(0)
+
                                 # check if the motion exec successfully
                                 if np.array_equal(tube_rack_t.rack_status, tube_rack.rack_status):
                                     print("Execute the motion successfully!")
@@ -583,6 +612,7 @@ def main(open_jaw_width=.034,
                                     # # restart
                                     is_replanning_flag = True
                                     # break
+
                 # planning failed
                 else:
                     print("---" * 17)

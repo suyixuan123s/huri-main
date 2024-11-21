@@ -17,6 +17,9 @@ if __name__ == '__main__':
                              [1, 0, 2, 0, 3, 0, 4, 0, 5, 0, ]])
     solver = D3QNSolver(goal_pattern)
     st = time.time()
-    r_path, path = solver.random_solve()
+    r_path, path = solver.random_solve(toggle_show=True)
     et = time.time()
     print(f"random solve time: {et-st}")
+
+
+

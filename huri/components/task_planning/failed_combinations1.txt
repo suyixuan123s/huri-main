@@ -1,0 +1,171 @@
+Combination 1
+Deleted positions: [array([0, 0], dtype=int64), array([0, 3], dtype=int64), array([1, 0], dtype=int64)]
+Modified pattern:
+[[0 0 0 0 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 2
+Deleted positions: [array([0, 0], dtype=int64), array([0, 3], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[0 0 0 0 3 4 0 0 5 0]
+ [2 1 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 7
+Deleted positions: [array([0, 0], dtype=int64), array([1, 0], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[0 0 0 2 3 4 0 0 5 0]
+ [0 1 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 11
+Deleted positions: [array([0, 0], dtype=int64), array([1, 0], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[0 0 0 2 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 0 3 0 4 0 5 0]]
+
+Combination 22
+Deleted positions: [array([1, 1], dtype=int64), array([0, 3], dtype=int64), array([1, 0], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [0 0 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 23
+Deleted positions: [array([1, 1], dtype=int64), array([0, 3], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [2 0 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 28
+Deleted positions: [array([1, 1], dtype=int64), array([1, 0], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 0 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 32
+Deleted positions: [array([1, 1], dtype=int64), array([1, 0], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 0 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 0 3 0 4 0 5 0]]
+
+Combination 43
+Deleted positions: [array([2, 1], dtype=int64), array([0, 3], dtype=int64), array([1, 0], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 0 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 44
+Deleted positions: [array([2, 1], dtype=int64), array([0, 3], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [2 1 0 2 3 4 0 0 5 0]
+ [0 0 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 49
+Deleted positions: [array([2, 1], dtype=int64), array([1, 0], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 0 2 3 4 0 0 5 0]
+ [0 0 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 2 3 0 4 0 5 0]]
+
+Combination 53
+Deleted positions: [array([2, 1], dtype=int64), array([1, 0], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 0 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [1 0 0 0 3 0 4 0 5 0]]
+
+Combination 95
+Deleted positions: [array([3, 2], dtype=int64), array([1, 0], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 0 2 5 4 0 0 0 0]
+ [1 0 0 0 3 0 4 0 5 0]]
+
+Combination 106
+Deleted positions: [array([4, 0], dtype=int64), array([0, 3], dtype=int64), array([1, 0], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [0 0 0 2 3 0 4 0 5 0]]
+
+Combination 107
+Deleted positions: [array([4, 0], dtype=int64), array([0, 3], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 0 3 4 0 0 5 0]
+ [2 1 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [0 0 0 2 3 0 4 0 5 0]]
+
+Combination 112
+Deleted positions: [array([4, 0], dtype=int64), array([1, 0], dtype=int64), array([1, 2], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 0 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [0 0 0 2 3 0 4 0 5 0]]
+
+Combination 113
+Deleted positions: [array([4, 0], dtype=int64), array([1, 0], dtype=int64), array([1, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 2 0 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [0 0 0 2 3 0 4 0 5 0]]
+
+Combination 116
+Deleted positions: [array([4, 0], dtype=int64), array([1, 0], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [0 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 2 5 4 0 0 0 0]
+ [0 0 0 0 3 0 4 0 5 0]]
+
+Combination 126
+Deleted positions: [array([4, 0], dtype=int64), array([3, 3], dtype=int64), array([4, 3], dtype=int64)]
+Modified pattern:
+[[1 0 0 2 3 4 0 0 5 0]
+ [2 1 2 2 3 4 0 0 5 0]
+ [0 1 1 2 3 4 0 0 5 0]
+ [0 0 1 0 5 4 0 0 0 0]
+ [0 0 0 0 3 0 4 0 5 0]]
+

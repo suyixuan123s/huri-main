@@ -44,6 +44,7 @@ def rectangle_polygon(rect_center, rect_extent):
     ru = rect_center + np.array([rect_extent[0], -rect_extent[1]]) / 2
     lt = rect_center + np.array([-rect_extent[0], +rect_extent[1]]) / 2
     rt = rect_center + rect_extent / 2
+
     return Polygon([lu, ru, lt, rt]).convex_hull
 
 
@@ -57,33 +58,38 @@ def to_action(rack_size, pick_id, place_id):
 
     # if pick_id.shape[0] != 2:
     pick_id = pick_id.T
-
     # if place_id.shape[0] != 2:
     place_id = place_id.T
 
     pick_id_r = np.ravel_multi_index(pick_id, rack_size)
     place_id_r = np.ravel_multi_index(place_id, rack_size)
+
     pp_id = np.stack((pick_id_r, place_id_r))
     min_pp_id = np.min(pp_id, axis=0)
     max_pp_id = np.max(pp_id, axis=0)
+
     return (bins[min_pp_id] + max_pp_id - min_pp_id - 1)
 
 
 def from_action(rack_size, abs_act_id) -> (np.ndarray, np.ndarray):
     bins = np.cumsum(np.arange(np.prod(rack_size) - 1, 0, -1))
+
     if bins[-1] > abs_act_id >= 0:
         pick_id = np.digitize(abs_act_id, bins)
         if pick_id == 0:
             place_id = abs_act_id + 1
         else:
             place_id = abs_act_id + 1 - bins[pick_id - 1] + pick_id
+
         return np.unravel_index(pick_id, rack_size), np.unravel_index(place_id, rack_size)
     else:
         return None
 
 
 def from_action_to_mat(rack_size, abs_act_id) -> np.ndarray:
+
     bins = np.cumsum(np.arange(np.prod(rack_size) - 1, 0, -1))
+
     if bins[-1] > abs_act_id >= 0:
         pick_id = np.digitize(abs_act_id, bins)
         if pick_id == 0:
@@ -92,6 +98,7 @@ def from_action_to_mat(rack_size, abs_act_id) -> np.ndarray:
             place_id = abs_act_id + 1 - bins[pick_id - 1] + pick_id
         idmat = np.eye(np.prod(rack_size), dtype=int)
         idmat[:, (pick_id, place_id)] = idmat[:, (place_id, pick_id)]
+
         return idmat
     else:
         return None
@@ -120,6 +127,7 @@ class RackState:
         state_s = state.copy()
         state_s[state_s > 0] = 1
         state_str = str(state_s)
+
         if state_str not in cls._cache:
             possible_actions, ma, fa = get_possible_actions(state_s)
             rack_size = state.shape
@@ -131,6 +139,7 @@ class RackState:
             }
         else:
             possible_abs_actions = cls._cache[state_str]["possible_abs_actions"]
+
         return possible_abs_actions
 
     @classmethod
@@ -138,16 +147,19 @@ class RackState:
         state_s = state.copy()
         state_s[state_s > 0] = 1
         state_str = str(state_s)
+
         if state_str not in cls._cache:
             possible_actions, ma, fa = get_possible_actions(state_s)
             rack_size = state.shape
             possible_abs_actions = to_action(rack_size, possible_actions[:, 0:2], possible_actions[:, 2:4])
+
             cls._cache[state_str] = {
                 "possible_abs_actions": possible_abs_actions,
                 "possible_actions": possible_actions,
             }
         else:
             possible_actions = cls._cache[state_str]["possible_actions"]
+
         return possible_actions
 
     @classmethod
@@ -187,6 +199,7 @@ class RackState:
             self._state = state.state.copy().astype(int)
         else:
             self._state = np.asarray(state, dtype=int)
+
         self._state_v = self.state.ravel()
         self._size = self._state.shape
 
@@ -223,6 +236,7 @@ class RackState:
         """
         a = time.time()
         possible_actions, ma, fa = get_possible_actions(self._state)
+
         if debug:
             b = time.time()
             print("Time consumtion is ", b - a)
@@ -230,6 +244,7 @@ class RackState:
             # print(ma[0])
             # print(fa[fa[:, 0] == 0])
             print(self.state)
+
             for _ in np.unique(fa[:, 0]):
                 print(_)
                 fillable_tst_mtx = np.zeros((5, 10))
@@ -505,12 +520,14 @@ class RackStatePlot:
 
     def _plot_state(self, state: RackState, axe, toggle_fill=False):
         tube_indices = np.asarray(np.where(state > 0)).T
+
         for ind in tube_indices:
             tube_type = state[ind[0], ind[1]]
             tube_pos = self.slot_centers[ind[0], ind[1]]
             tube_polygon = Point(tube_pos[0], tube_pos[1]).buffer(
                 np.min(self.slot_dim) / np.sqrt(2) / 2
             )
+
             if tube_type > 999:
                 axe.plot(*tube_polygon.exterior.xy,
                          color='black', linestyle='--')
@@ -533,6 +550,7 @@ class RackStatePlot:
     def _plot_state_circle(self, state: RackState, axe, toggle_fill=False):
         tube_indices = np.asarray(np.where(state > 0)).T
         circle_array = np.ndarray(shape=state.shape, dtype=object)
+
         for ind in tube_indices:
             tube_type = state[ind[0], ind[1]]
             tube_color = self.color[tube_type]
@@ -545,10 +563,12 @@ class RackStatePlot:
                                      linewidth=0)
             axe.add_patch(tube_circle)
             circle_array[ind[0], ind[1]] = tube_circle
+
         return circle_array
 
     def _plot_cons(self, state: RackState, axe, color="red"):
         tube_indices = np.asarray(np.where(state > 0)).T
+
         for ind in tube_indices:
             tube_color = color
             tube_pos = self.slot_centers[ind[0], ind[1]]
@@ -564,6 +584,7 @@ class RackStatePlot:
         else:
             goal_pattern_np = np.asarray(goal_pattern)
             state_shape = goal_pattern_np.shape
+
         for ind in np.array(np.meshgrid(np.arange(state_shape[0]), np.arange(state_shape[1]))).T.reshape(-1, 2):
             tube_type = goal_pattern_np[ind[0], ind[1]]
             if tube_type > 0:
@@ -615,10 +636,13 @@ class RackStatePlot:
         movemap = state - state_pr
         if isinstance(movemap, RackState):
             movemap = movemap._state
+
         move_to_ind = np.concatenate(np.where(movemap > 0))
         move_from_ind = np.concatenate(np.where(movemap < 0))
+
         if len(move_to_ind) < 1 or len(move_from_ind) < 1:
             return
+
         goal_pos = self.slot_centers[move_to_ind[0], move_to_ind[1]]
         start_pos = self.slot_centers[move_from_ind[0], move_from_ind[1]]
         direction = np.array(goal_pos) - np.array(start_pos)
@@ -660,18 +684,22 @@ class RackStatePlot:
                            scale: int or float = 1) -> Plot:
         if goal is None:
             goal = self._goal_pattern
+
         state = RackState(state)
         goal = RackState(goal)
         rack_size = state.shape
         feasible_action_set = state.feasible_action_set
+
         action_values_indices = [(*RackArrangementEnv.expr_action(feasible_action_set[i],
                                                                   rack_size,
                                                                   state), action_values[feasible_action_set[i]]) for
                                  i in range(len(feasible_action_set))]
+
         all_values = [v for _, _, v in action_values_indices if v != 0]
         min_val = min(all_values)
         max_val = max(all_values)
         groups = defaultdict(list)
+
         for coord in action_values_indices:
             groups[coord[0]].append(coord)
 
@@ -692,13 +720,17 @@ class RackStatePlot:
         fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 5 * scale, n_rows * 3 * scale))
         if n_subplots == 1:
             axes = np.array([axes])
+
         # Flatten the axes array for easy indexing
         axes_flat = axes.flatten()
+
         for idx, (pick_coord, group) in enumerate(groups.items()):
             ax = axes_flat[idx]
+
             # Create a grid initialized to 0
             grid_size_x, grid_size_y = rack_size
             grid = np.zeros((grid_size_x, grid_size_y)) - np.inf
+
             # Populate the grid with counts
             for _, (x, y), v in group:
                 grid[x, y] = v  # Increment the count for the grid cell at (x, y)
@@ -728,6 +760,7 @@ class RackStatePlot:
                                     facecolor=color[state[pick_coord[0], pick_coord[1]]])  # Choose your color
 
             ax.add_patch(circle)
+
             # draw the goal
             for i in goal.num_classes:
                 axis = np.where(goal.state == i)
@@ -753,6 +786,7 @@ class RackStatePlot:
         fig, ax = plt.subplots(1, 1, figsize=(h, w))
         # do not show the axis in the figure
         ax.axis('off')
+
         # reshape the axs into min(state_num or row)
         if toggle_bg:
             self._plot_rack(axe=ax)
@@ -769,6 +803,7 @@ class RackStatePlot:
         fig, ax = plt.subplots(1, 1, figsize=(h, w))
         # do not show the axis in the figure
         ax.axis('off')
+
         # reshape the axs into min(state_num or row)
         state = self._aligned_state(state)
         self._plot_rack(axe=ax, goal_pattern=state)
@@ -787,24 +822,29 @@ class RackStatePlot:
             rack_state_titles, rack_states = list(rack_states.keys()), list(rack_states.values())
         else:
             rack_state_titles = None
+
         state_num = len(rack_states)
         # set layout
         w, h = self.state_shape
         h = min(h, img_scale)
         w = h * w / self.state_shape[1]
+
         fig, axes = plt.subplots(int(np.ceil(state_num / (row))), min(state_num, row),
                                  figsize=(min(state_num, row) * w, h * int(np.ceil(state_num / (row)))))
         # print((min(state_num, row) * w, h * int(np.ceil(state_num / row))))
         if state_num == 1:
             axes = np.array([axes])
+
         # do not show the axis in the figure
         [i.axis('off') for i in axes.ravel()]
         # reshape the axs into min(state_num or row)
         axes = axes.reshape(-1, min(state_num, row))
+
         # plot
         for state_ind, state in enumerate(rack_states):
             state = self._aligned_state(state)
             axe_tmp = axes[state_ind // row, state_ind % row]
+
             # plot each rack state
             self._plot_rack(axe=axe_tmp, )
             # if not toggle_fill:
@@ -813,14 +853,17 @@ class RackStatePlot:
             #     self._plot_rack(axe=axe_tmp, goal_pattern=np.zeros_like(np.array(state)))
 
             # axe_tmp.imshow()
+
             # plot tube
             self._plot_state(state, axe=axe_tmp, toggle_fill=toggle_fill)
+
             # plot arrow
             if toggle_arrows:
                 state_ind_pr = state_ind - 1
                 if state_ind_pr >= 0:
                     state_pr = self._aligned_state(rack_states[state_ind_pr])
                     self._plot_arrow_between_2states(state_pr=state_pr, state=state, axe=axe_tmp)
+
             if fillable_mtx is not None or movable_mtx is not None:
                 if not isinstance(state, RackState):
                     rs = RackState(state)
@@ -832,6 +875,7 @@ class RackStatePlot:
                     self._plot_cons(self._aligned_state(movable_mtx[state_ind]), axe=axe_tmp, color="red")
                 if fillable_mtx is not None:
                     self._plot_cons(self._aligned_state(fillable_mtx[state_ind]), axe=axe_tmp, color="green")
+
             if rack_state_titles is not None:
                 axe_tmp.set_title(f"{rack_state_titles[state_ind]}")
             if reward_list is not None:
@@ -846,43 +890,55 @@ class RackStatePlot:
                               speed=1,
                               img_scale=1.5) -> animation:
         assert len(rack_states) > 1, 'animation can only generated when rack states larger than 1'
-        # length of the eack
+
+        # Determine if rack_states is a dictionary (for titles) or list
         if isinstance(rack_states, dict):
             rack_state_titles, rack_states = list(rack_states.keys()), list(rack_states.values())
         else:
             rack_state_titles = None
+
         state_num = len(rack_states)
         # set layout
         w, h = self.state_shape
         h = min(h, img_scale)
         w = h * w / self.state_shape[1]
+
+        # Set up a single plot for animation
         fig, ax = plt.subplots(figsize=(w, h))
         # do not show the axis in the figure
         ax.axis('off')
-        # plot
+
+        # Plot the initial rack structure
         self._plot_rack(axe=ax, )
         rack_states_aligned = [self._aligned_state(s) for s in rack_states]
         state = rack_states_aligned[0]
+
         circle_array = self._plot_state_circle(state, ax)
         start_positions = []
         goal_positions = []
         circles = []
+
         for state_ind, state_next in enumerate(rack_states_aligned[1:]):
             movemap = state_next - state
             if isinstance(movemap, RackState):
                 movemap = movemap._state
+
             move_to_ind = np.concatenate(np.where(movemap > 0))
             move_from_ind = np.concatenate(np.where(movemap < 0))
+
             if len(move_to_ind) < 1 or len(move_from_ind) < 1:
                 raise Exception("Infeasible actions")
+
             goal_pos = self.slot_centers[move_to_ind[0], move_to_ind[1]]
             start_pos = self.slot_centers[move_from_ind[0], move_from_ind[1]]
 
             start_positions.append(start_pos)
             goal_positions.append(goal_pos)
             circles.append(circle_array[move_from_ind[0], move_from_ind[1]])
+
             circle_array[move_to_ind[0], move_to_ind[1]] = circle_array[move_from_ind[0], move_from_ind[1]]
             circle_array[move_from_ind[0], move_from_ind[1]] = None
+
             state = state_next
 
         # Function to create a custom animation for multiple circles
@@ -916,6 +972,7 @@ class RackStatePlot:
             frames_per_circle = [int(d / speed) for d in distances]
             total_frames = sum(frames_per_circle)
             arrows = []
+
             for i in range(len(start_positions)):
                 start_pos = start_positions[i]
                 goal_pos = goal_positions[i]
@@ -937,11 +994,13 @@ class RackStatePlot:
             def animate(frame):
                 patches = []
                 accumulated_frames = 0
+
                 for idx, circle in enumerate(circles):
                     start_frame = accumulated_frames
                     end_frame = accumulated_frames + frames_per_circle[idx]
                     accumulated_frames = end_frame
                     arrow = arrows[idx]
+
                     if start_frame <= frame < end_frame:
                         progress = (frame - start_frame) / frames_per_circle[idx]
                         new_x = start_positions[idx][0] + (goal_positions[idx][0] - start_positions[idx][0]) * progress
@@ -966,35 +1025,45 @@ class RackStatePlot:
             rack_state_titles, rack_states = list(rack_states.keys()), list(rack_states.values())
         else:
             rack_state_titles = None
+
         state_num = len(rack_states)
+
         # set layout
         w, h = self.state_shape
         h = min(h, img_scale)
         w = h * w / self.state_shape[1]
+
         fig, axes = plt.subplots(int(np.ceil(state_num / (row))), min(state_num, row),
                                  figsize=(min(state_num, row) * w, h * int(np.ceil(state_num / (row)))))
+
         # print((min(state_num, row) * w, h * int(np.ceil(state_num / row))))
         if state_num == 1:
             axes = np.array([axes])
+
         # do not show the axis in the figure
         [i.axis('off') for i in axes.ravel()]
         # reshape the axs into min(state_num or row)
         axes = axes.reshape(-1, min(state_num, row))
+
         # plot
         for state_ind, state in enumerate(rack_states):
             state = self._aligned_state(state)
             axe_tmp = axes[state_ind // row, state_ind % row]
+
             # plot each rack state
             self._plot_rack(axe=axe_tmp, goal_pattern=np.zeros_like(state), )
+
             # axe_tmp.imshow()
             # plot tube
             self._plot_state(state, axe=axe_tmp, toggle_fill=True)
+
             # plot arrow
             if toggle_arrows:
                 state_ind_pr = state_ind - 1
                 if state_ind_pr >= 0:
                     state_pr = self._aligned_state(rack_states[state_ind_pr])
                     self._plot_arrow_between_2states(state_pr=state_pr, state=state, axe=axe_tmp)
+
             if fillable_mtx is not None or movable_mtx is not None:
                 if not isinstance(state, RackState):
                     rs = RackState(state)
@@ -1004,8 +1073,10 @@ class RackStatePlot:
                 # movable_slots = rs.movable_slots
                 if movable_mtx is not None:
                     self._plot_cons(self._aligned_state(movable_mtx[state_ind]), axe=axe_tmp, color="red")
+
                 if fillable_mtx is not None:
                     self._plot_cons(self._aligned_state(fillable_mtx[state_ind]), axe=axe_tmp, color="green")
+
             if rack_state_titles is not None:
                 axe_tmp.set_title(f"{rack_state_titles[state_ind]}")
         return Plot(fig=fig, w=5, h=4, dpi=200)
@@ -1095,15 +1166,19 @@ class RackArrangementEnv(Gym_Proto):
             s_current = s_current.state
         if isinstance(s_next, RackState):
             s_next = s_next.state
+
         assert s_current.shape == s_next.shape, "ERROR"
+
         move = s_next - s_current
         move_to_idx = np.hstack(np.where(move > 0))
         move_from_idx = np.hstack(np.where(move < 0))
+
         if toggle_debug:
             print(s_current)
             print(s_next)
         if len(move_to_idx) > 2 or len(move_from_idx) > 2:
             raise Exception("moving error")
+
         rack_size = s_current.shape
         action_ids = to_action(rack_size, move_to_idx, move_from_idx)
 
@@ -1125,17 +1200,23 @@ class RackArrangementEnv(Gym_Proto):
             s_current = s_current.state
         if isinstance(s_next, RackState):
             s_next = s_next.state
+
         assert s_current.shape == s_next.shape, "ERROR"
+
         move = s_next - s_current
         move_to_idx = np.hstack(np.where(move > 0))
         move_from_idx = np.hstack(np.where(move < 0))
+
         if toggle_debug:
             print(s_current)
             print(s_next)
+
         if len(move_to_idx) > 2 or len(move_from_idx) > 2:
             raise Exception("moving error")
+
         rack_size = s_current.shape
         action_ids = to_action(rack_size, move_to_idx, move_from_idx)
+
         if condition_set is not None:
             feasible_actions = RackState(s_current).get_feasible_action_condition_set(condition_set)
         else:
@@ -1154,18 +1235,23 @@ class RackArrangementEnv(Gym_Proto):
             s_current = s_current.state
         if isinstance(s_next, RackState):
             s_next = s_next.state
+
         assert s_current.shape == s_next.shape, "ERROR"
+
         move = s_next - s_current
         move_to_idx = np.hstack(np.where(move > 0))
         move_from_idx = np.hstack(np.where(move < 0))
+
         if toggle_debug:
             print(s_current)
             print(s_next)
         if len(move_to_idx) != 2 or len(move_from_idx) != 2:
             # print("TEST")
             return None
+
         rack_size = s_current.shape
         action_ids = to_action(rack_size, move_to_idx, move_from_idx)
+
         return action_ids.item()
 
     @staticmethod
@@ -1183,12 +1269,16 @@ class RackArrangementEnv(Gym_Proto):
         # Create a mask where entries do not match the goal pattern
         mismatch_mask_goal = (goal_pattern.state != current_state.state) & (goal_pattern.state != 0)
         mismatch_mask_state = (goal_pattern.state != current_state.state) & (current_state.state != 0)
+
         # Use the mask to extract unsatisfied entries from goal_pattern
         unsatisfied_goal = np.where(mismatch_mask_goal, goal_pattern, 0)
         unsatisfied_state = np.where(mismatch_mask_state, current_state, 0)
+
         infeasible_num_goal_list = []
         infeasible_num_state_list = []
+
         for category in range(1, category_num + 1):
+
             if np.any(unsatisfied_goal == category):
                 # Check if any category position is not fillable
                 infeasible_num_state_list.append(np.count_nonzero((movable_mask[unsatisfied_state == category]) == 0))
@@ -1196,6 +1286,7 @@ class RackArrangementEnv(Gym_Proto):
             else:
                 infeasible_num_state_list.append(0)
                 infeasible_num_goal_list.append(0)
+
         return np.array(infeasible_num_state_list, dtype=int), np.array(infeasible_num_goal_list, dtype=int)
 
     @staticmethod
@@ -1210,8 +1301,10 @@ class RackArrangementEnv(Gym_Proto):
         Returns:
         - True if all categories are fillable, else False
         """
+
         feasible_actions = current_state.feasible_action_set_detail
         fillable_map, movable_map = current_state.fillable_movable_region
+
         movable_map = np.zeros_like(current_state, dtype=bool)
         movable_map[
             feasible_actions[:, 0], feasible_actions[:, 1]] = 1  # ke neng neng na, dan shi na le zhi hou yi bu chu qu?
@@ -1219,32 +1312,42 @@ class RackArrangementEnv(Gym_Proto):
         # Create a mask where entries do not match the goal pattern
         avaliable_goal_pattern = np.where((current_state.state == 0) & (goal_pattern.state > 0), goal_pattern, 0)
         mismatch_mask_state = (goal_pattern.state != current_state.state) & (current_state.state != 0)
+
         # Use the mask to extract unsatisfied entries from goal_pattern
         unsatisfied_state = np.where(mismatch_mask_state, current_state, 0)
+
         infeasible_num_goal_list = []
         infeasible_num_state_list = []
+
         num_feasible_goal_slot = np.zeros(category_num, dtype=int)
         num_unsatisfied_tube = np.zeros(category_num, dtype=int)
         num_tube_no_belong_to_goal = np.zeros(category_num, dtype=int)
         num_tube_no_belong_to_goal_movable = np.zeros(category_num, dtype=int)
+
         for category in range(1, category_num + 1):
             category_id = category - 1
+
             tube_no_belong_to_goal_mask = (current_state.state > 0) & (goal_pattern.state != current_state.state) & (
                     goal_pattern == category)
             tube_no_belong_to_goal_mask_indices = np.argwhere(tube_no_belong_to_goal_mask)
+
             num_tube_no_belong_to_goal[category_id] = len(tube_no_belong_to_goal_mask_indices)
             num_tube_no_belong_to_goal_movable[category_id] = np.count_nonzero(movable_map[tube_no_belong_to_goal_mask])
+
             # TODO 能movable不代表能移动出去
             if np.any(avaliable_goal_pattern == category):
                 # complete goal pattern
                 fillable_map_tmp = fillable_map.copy()
+
                 for _ in np.argwhere(unsatisfied_state == category):
                     ids = feasible_actions[np.all(feasible_actions[:, :2] == _, axis=1)][:, 2:4]
                     fillable_map_tmp[ids[:, 0], ids[:, 1]] = 1
                 # Check if any category position is not fillable
                 # infeasible_num_state_list.append(np.count_nonzero((movable_map[unsatisfied_state == category]) == 0))
+
                 num_feasible_goal_slot[category_id] = np.count_nonzero(
                     (fillable_map_tmp[avaliable_goal_pattern == category]))
+
             else:
                 num_feasible_goal_slot[category_id] = 0
             num_unsatisfied_tube[category_id] = np.count_nonzero(unsatisfied_state == category)
@@ -1394,6 +1497,7 @@ class RackArrangementEnv(Gym_Proto):
                 goal_pattern = RackState(self.goal_pattern)
             else:
                 raise Exception("No support goal state")
+
         if not self.is_curriculum_lr:
             # print(goal_pattern,goal_pattern.nonzero_count)
             initstate = get_random_states(self.rack_size,
@@ -1408,11 +1512,13 @@ class RackArrangementEnv(Gym_Proto):
                     break
             else:
                 raise Exception("Cannot generate vaild state")
+
         return self.reset_state_goal(init_state=initstate, goal_pattern=goal_pattern)
 
     def _expr_action(self, action: int):
         rack_size = self.rack_size
         p1, p2 = from_action(rack_size, action)
+
         if self.state[p1] == 0 and self.state[p2] > 0:
             pick_id = p2
             place_id = p1
@@ -1421,6 +1527,7 @@ class RackArrangementEnv(Gym_Proto):
             place_id = p2
         else:
             raise Exception(f"Unexpected action {action, p1, p2}")
+
         return pick_id, place_id
 
     def _get_reward(self, is_finished, state_current, state_next, goal_pattern, toggle_debug=False,
@@ -1444,19 +1551,24 @@ class RackArrangementEnv(Gym_Proto):
                           state_next: np.ndarray,
                           goal_pattern: np.ndarray, toggle_debug=False,
                           toggle_reward_info=False):
+
         state_current, state_next, goal_pattern = np.array(state_current), \
             np.array(state_next), np.array(goal_pattern)
+
         if is_finished:
             # NOTE: This value should be change according to the number of test tubes
             if isdone(state_next, goal_pattern):
                 return 20
             else:
                 return -20
+
         reward = 0  # every move will cause 1 penalty
         reward_info_str = ''
+
         move_map = state_next - state_current
         move_to_idx = np.where(move_map > 0)
         move_from_idx = np.where(move_map < 0)
+
         is_move_to_pattern = goal_pattern[move_to_idx] == state_next[move_to_idx]
         is_move_out_pattern = goal_pattern[move_from_idx] == state_current[move_from_idx]
 
@@ -1479,6 +1591,7 @@ class RackArrangementEnv(Gym_Proto):
             is_different_tube_inside_goal = num_tube_no_belong_to_goal[obj_index] > 0
             is_different_tube_movable_inside_goal = num_tube_no_belong_to_goal_movable[obj_index] > 0
             category_goal_pattern_mask = goal_pattern == obj_type
+
             if toggle_debug:
                 print(num_tube_no_belong_to_goal, num_tube_no_belong_to_goal_movable,
                       num_tube_no_belong_to_goal[obj_index], num_tube_no_belong_to_goal_movable[obj_index])
@@ -1578,12 +1691,15 @@ class RackArrangementEnv(Gym_Proto):
         if is_finished:
             # return len(state_current[state_current > 0])
             return 10
+
         reward = 0  # every move will cause 1 penalty
         move_map = state_next - state_current
         move_to_idx = np.where(move_map > 0)
         move_from_idx = np.where(move_map < 0)
+
         is_move_to_pattern = goal_pattern[move_to_idx] == state_next[move_to_idx]
         is_move_out_pattern = goal_pattern[move_from_idx] == state_current[move_from_idx]
+
         # check if the move of the pattern disturb the other pattern
         fb, mb = RackState(state_current).fillable_movable_region
         infeasible_slots_state_current, infeasible_slots_goal_current = self.is_safe(RackState(state_current),
@@ -1591,12 +1707,14 @@ class RackArrangementEnv(Gym_Proto):
                                                                                      fb,
                                                                                      mb,
                                                                                      category_num=self.num_classes)
+
         fb, mb = RackState(state_next).fillable_movable_region
         infeasible_slots_state_next, infeasible_slots_goal_next = self.is_safe(RackState(state_next),
                                                                                RackState(goal_pattern),
                                                                                fb,
                                                                                mb,
                                                                                category_num=self.num_classes)
+
         if toggle_debug:
             print("-" * 20)
             print("infeasible state current", infeasible_slots_state_current)
@@ -1608,6 +1726,7 @@ class RackArrangementEnv(Gym_Proto):
 
         infeasible_goal = infeasible_slots_goal_next - infeasible_slots_goal_current
         infeasible_goal[infeasible_goal > 0] *= 2
+
         if np.sum(infeasible_goal) < 0:
             if toggle_debug:
                 print(">>> remove the block goal: + 1.5")
@@ -1616,6 +1735,7 @@ class RackArrangementEnv(Gym_Proto):
             if toggle_debug:
                 print(">>> increase the block goal: -2")
             reward -= 2
+
         # ---------
         infeasible_state = infeasible_slots_state_next - infeasible_slots_state_current
         if np.sum(infeasible_state) < 0:
@@ -1698,16 +1818,20 @@ class RackArrangementEnv(Gym_Proto):
     def sample(self, state: RackState = None, no_repeat=True):
         if state is None:
             state = self.state
+
         feasible_actions = state.feasible_action_set
+
         if no_repeat:
             repeat_acts = []
             for _ in self.rack_state_history:
                 act = self.action_between_states_constraint_free(state, _)
                 if act is not None:
                     repeat_acts.append(act)
+
             # print(feasible_actions, repeat_acts)
             # print(feasible_actions, repeat_acts)
             feasible_actions = np.setdiff1d(feasible_actions, repeat_acts)
+
             # if len(repeat_acts) > 5:
             #     print(repeat_acts)
             # print(feasible_actions)
@@ -1786,15 +1910,19 @@ class RackArrangementEnv(Gym_Proto):
 
     def observation(self):
         obs = np.zeros(self.observation_space_dim)
+
         assert self.observation_space_dim[0] > 0, 'Observation dim 0 must be greater than 2'
+
         obs[-1] = self.to_state_np(self.goal_pattern)
         obs[-2] = self.to_state_np(self.state)
+
         for i in range(1, self.observation_space_dim[0] - 1):
             # i \in [1, self.observation_space_dim[0]-2]
             if i <= len(self.rack_state_history):
                 obs[-2 - i] = self.to_state_np(self.rack_state_history[-i])
             else:
                 break
+
         return obs
 
     def legal_actions(self):
@@ -1806,14 +1934,19 @@ class RackArrangementEnv(Gym_Proto):
         reward_traj = []
         action_traj = []
         acc_reward = 0
+
         for p in range(0, len(paths) - 1)[::-1]:
             s = paths[p]
             s_n = paths[p + 1]
+
             finished = self.is_finished(s_n.state if isinstance(s_n, RackState) else s_n,
                                         goal_pattern.state if isinstance(goal_pattern, RackState) else goal_pattern)
+
             acc_reward += self._get_reward(finished, s, s_n, goal_pattern)
+
             reward_traj.append(acc_reward)
             action_traj.append(self.action_between_states(s, s_n))
+
             if toggle_debug:
                 print(s)
                 print(s_n)
@@ -1827,9 +1960,11 @@ class RackArrangementEnv(Gym_Proto):
             state = RackState(state)
         if not isinstance(next_state, RackState):
             next_state = RackState(next_state)
+
         goal_r = goal.reflections
         state_r = state.reflections
         next_state_r = next_state.reflections
+
         data_pack = []
         for (g, s, sn) in zip(goal_r, state_r, next_state_r):
             data_pack.append([g.state, s.state, self.action_between_states(s, sn), reward, sn.state, done])
@@ -1850,6 +1985,7 @@ class RackStateScheduler(object):
     def __init__(self, num_classes, rack_size, np_random=None, state_level=1, goal_level=1, class_level=1,
                  max_state_level_per_class=8):
         assert num_classes > 0
+
         self.num_classes = num_classes
         self.class_ids = np.arange(1, self.num_classes + 1)
         self.rack_size = rack_size
@@ -1869,10 +2005,12 @@ class RackStateScheduler(object):
             goal_pattern_np = goal_pattern
         else:
             raise Exception
+
         goalpattern_ravel = goal_pattern_np.ravel()
         max_len = len(np.where(goalpattern_ravel > 0)[0]) + 1
         feasible_diff = min(max_len, self.state_level)
         min_obj_num = self.state_level
+
         state = get_random_states(self.rack_size, goal_pattern_np,
                                   min_obj_num=min_obj_num,
                                   obj_num=feasible_diff,
@@ -1886,18 +2024,22 @@ class RackStateScheduler(object):
             chosed_ids = self._np_random.choice(self.class_ids, self.num_classes, replace=False)
         else:
             chosed_ids = self._np_random.choice(self.class_ids, min(self.goal_level, self.num_classes), replace=False)
+
         # print("chosed ids", chosed_ids)
         # goal_pattern = self._np_random.randint(0, self.goal_level + 1, size=self.rack_size)
         p_0 = max(.3 * np.cos(np.pi / 2 * self.state_level / (np.prod(self.rack_size) - 1)), 0)
+
         # print("p_o is ", p_0)
         goal_pattern = self._np_random.choice(np.arange(0, self.goal_level + 1), size=self.rack_size,
                                               p=[p_0] + [(1 - p_0) / self.goal_level] * self.goal_level)
+
         if np.all(goal_pattern == goal_pattern[0]):
             goal_pattern[self._np_random.randint(len(goal_pattern))] = 0
 
         for ind, i in enumerate(chosed_ids):
             if ind + 1 in goal_pattern:
                 goal_pattern[goal_pattern == ind + 1] = -i
+
         return RackState(-goal_pattern)
         # return np.repeat(self._np_random.randint(1, self.num_classes + 1, size=[1, self.rack_size[1]]),
         #                  self.rack_size[0], axis=0)
@@ -1976,6 +2118,7 @@ class RackStateScheduler2(RackStateScheduler):
             raise Exception
 
         goalpattern_ravel = goal_pattern_np.ravel()
+
         if self.goal_pattern_class_num is None:
             goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
             for i in range(self.num_classes):
@@ -1984,12 +2127,15 @@ class RackStateScheduler2(RackStateScheduler):
                 self.goal_pattern_class_num = goal_pattern_class_num
         else:
             goal_pattern_class_num = self.goal_pattern_class_num
+
         final_state_result = np.zeros(self.rack_size, dtype=int)
 
         state_level = self.state_level
         class_level = self.class_level
+
         # selected_classes = np.random.choice(range(1, self.num_classes + 1), class_level, replace=False)
         selected_classes = class_level
+
         if selected_classes == (self.num_classes + 1):
             selected_classes = self._np_random.choice(range(1, self.num_classes + 1),
                                                       min(self.state_level, self.num_classes),
@@ -1997,6 +2143,7 @@ class RackStateScheduler2(RackStateScheduler):
         else:
             num_in_goal = state_level - self.evolve_level
             total_avaliable_num = np.prod(self.rack_size)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if num_in_goal > goal_pattern_class_num[i]:
@@ -2011,6 +2158,7 @@ class RackStateScheduler2(RackStateScheduler):
                     p = inds[self._np_random.choice(len(inds), num_in_goal, replace=False)]
                     final_state_result[p[:, 0], p[:, 1]] = i + 1
                     total_avaliable_num -= len(p)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if total_avaliable_num <= self.evolve_level:
@@ -2020,10 +2168,12 @@ class RackStateScheduler2(RackStateScheduler):
                 final_state_result[p[:, 0], p[:, 1]] = i + 1
                 total_avaliable_num -= len(p)
                 return RackState(final_state_result)
+
         selected_tube = [_ for _ in selected_classes]
         possible_tube_add_num = state_level - len(selected_tube)
         selected_classes_indices = selected_classes - 1
         selected_tube_tmp = []
+
         if possible_tube_add_num > 0:
             for ind in selected_classes_indices:
                 remain_num = goal_pattern_class_num[ind] - 1
@@ -2041,6 +2191,7 @@ class RackStateScheduler2(RackStateScheduler):
                 break
             else:
                 final_state_result = np.zeros(self.rack_size, dtype=int)
+
         return RackState(final_state_result)
         # max_len = len(np.where(goalpattern_ravel > 0)[0]) + 1
         # feasible_diff = min(max_len, self.state_level)
@@ -2067,8 +2218,10 @@ class RackStateScheduler2(RackStateScheduler):
         goal_pattern_np = np.array(goal_pattern)
         goalpattern_ravel = goal_pattern_np.ravel()
         goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
+
         for i in range(self.num_classes):
             goal_pattern_class_num[i] = len(np.where(goalpattern_ravel == (i + 1))[0])
+
         if self.is_goalpattern_fixed:
             self.goal_pattern_class_num = goal_pattern_class_num
             self.goal_pattern_np = goal_pattern_np
@@ -2080,6 +2233,7 @@ class RackStateScheduler2(RackStateScheduler):
             total_goal_num = len(np.where(goal_pattern_np > 0)[0])
             total_class_level = self.num_classes + 1
             is_update = True
+
             while 1:
                 # if state level is larger than the total goal num => break
                 if state_level > total_goal_num:
@@ -2135,10 +2289,12 @@ class RackStateScheduler2_5(RackStateScheduler):
                  max_state_level_per_class=100, is_goalpattern_fixed=False):
         super().__init__(num_classes, rack_size, np_random, state_level, goal_level, class_level,
                          max_state_level_per_class)
+
         self.goal_level = goal_level
         self.is_goalpattern_fixed = is_goalpattern_fixed
         self.goal_pattern_class_num = None
         self.evolve_level = 1
+
         self.goal_pattern_np = None
         self.training_plan = {}
 
@@ -2151,18 +2307,23 @@ class RackStateScheduler2_5(RackStateScheduler):
             raise Exception
 
         goalpattern_ravel = goal_pattern_np.ravel()
+
         if self.goal_pattern_class_num is None:
             goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
+
             for i in range(self.num_classes):
                 goal_pattern_class_num[i] = len(np.where(goalpattern_ravel == (i + 1))[0])
+
             if self.is_goalpattern_fixed:
                 self.goal_pattern_class_num = goal_pattern_class_num
         else:
             goal_pattern_class_num = self.goal_pattern_class_num
+
         final_state_result = np.zeros(self.rack_size, dtype=int)
 
         state_level = self.state_level
         class_level = self.class_level
+
         # selected_classes = np.random.choice(range(1, self.num_classes + 1), class_level, replace=False)
         selected_classes = self._np_random.choice(range(1, self.num_classes + 1),
                                                   min(self.state_level, class_level),
@@ -2170,6 +2331,7 @@ class RackStateScheduler2_5(RackStateScheduler):
         if class_level == 1:
             num_in_goal = state_level - self.evolve_level
             total_avaliable_num = np.prod(self.rack_size)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if num_in_goal > goal_pattern_class_num[i]:
@@ -2184,6 +2346,7 @@ class RackStateScheduler2_5(RackStateScheduler):
                     p = inds[self._np_random.choice(len(inds), num_in_goal, replace=False)]
                     final_state_result[p[:, 0], p[:, 1]] = i + 1
                     total_avaliable_num -= len(p)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if total_avaliable_num <= self.evolve_level:
@@ -2192,12 +2355,14 @@ class RackStateScheduler2_5(RackStateScheduler):
                 p = inds[self._np_random.choice(len(inds), self.evolve_level, replace=False)]
                 final_state_result[p[:, 0], p[:, 1]] = i + 1
                 total_avaliable_num -= len(p)
+
                 return RackState(final_state_result)
 
         selected_tube = [_ for _ in selected_classes]
         possible_tube_add_num = state_level - len(selected_tube)
         selected_classes_indices = selected_classes - 1
         selected_tube_tmp = []
+
         if possible_tube_add_num > 0:
             for ind in selected_classes_indices:
                 remain_num = goal_pattern_class_num[ind] - 1
@@ -2206,7 +2371,9 @@ class RackStateScheduler2_5(RackStateScheduler):
                 selected_tube_tmp += [ind + 1] * remain_num
         selected_tube = self._np_random.choice(selected_tube_tmp, possible_tube_add_num,
                                                replace=False).tolist() + selected_tube
+
         pattern_is_done = False
+
         while not pattern_is_done:
             coords = self._np_random.choice(np.prod(self.rack_size), size=len(selected_tube), replace=False)
             coords = np.array(np.unravel_index(coords, self.rack_size)).T
@@ -2215,6 +2382,7 @@ class RackStateScheduler2_5(RackStateScheduler):
                 break
             else:
                 final_state_result = np.zeros(self.rack_size, dtype=int)
+
         return RackState(final_state_result)
 
     def set_training_level(self, training_level):
@@ -2233,8 +2401,10 @@ class RackStateScheduler2_5(RackStateScheduler):
         goal_pattern_np = np.array(goal_pattern)
         goalpattern_ravel = goal_pattern_np.ravel()
         goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
+
         for i in range(self.num_classes):
             goal_pattern_class_num[i] = len(np.where(goalpattern_ravel == (i + 1))[0])
+
         if self.is_goalpattern_fixed:
             self.goal_pattern_class_num = goal_pattern_class_num
             n_smallest = np.sort(goal_pattern_class_num)
@@ -2248,10 +2418,12 @@ class RackStateScheduler2_5(RackStateScheduler):
             total_num_test_tube = np.prod(self.rack_size)
             total_goal_num = len(np.where(goal_pattern_np > 0)[0])
             is_update = True
+
             while 1:
                 # if state level is larger than the total goal num => break
                 if state_level > total_goal_num:
                     break
+
                 # state level, goal level
                 if is_update:
                     self.training_plan[training_level] = [state_level, class_level, evolve_level]
@@ -2259,6 +2431,7 @@ class RackStateScheduler2_5(RackStateScheduler):
                 training_level += 1
 
                 evolve_level = evolve_level + 1 if evolve_level + 2 > state_level else evolve_level + 2
+
                 if evolve_level > state_level:
                     # check if the class level can be update
                     if class_level >= state_level or class_level >= self.num_classes:
@@ -2291,6 +2464,7 @@ class RackStateScheduler2_5(RackStateScheduler):
     def update_evolve_num(self):
         need_update = False
         self.evolve_level += 1
+
         if self.evolve_level > self.state_level:
             self.evolve_level = 1
             need_update = True
@@ -2298,6 +2472,7 @@ class RackStateScheduler2_5(RackStateScheduler):
 
     def update_training_level(self):
         cls_level = self.class_level
+
         if self.update_evolve_num():
             st_level_u = self.update_state_level()
         else:
@@ -2310,6 +2485,7 @@ class RackStateScheduler3(RackStateScheduler):
                  max_state_level_per_class=100, is_goalpattern_fixed=False):
         super().__init__(num_classes, rack_size, np_random, state_level, goal_level, class_level,
                          max_state_level_per_class)
+
         self.goal_level = goal_level
         self.is_goalpattern_fixed = is_goalpattern_fixed
         self.goal_pattern_class_num = None
@@ -2326,20 +2502,25 @@ class RackStateScheduler3(RackStateScheduler):
             raise Exception
 
         goalpattern_ravel = goal_pattern_np.ravel()
+
         if self.goal_pattern_class_num is None:
             goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
+
             for i in range(self.num_classes):
                 goal_pattern_class_num[i] = len(np.where(goalpattern_ravel == (i + 1))[0])
             if self.is_goalpattern_fixed:
                 self.goal_pattern_class_num = goal_pattern_class_num
         else:
             goal_pattern_class_num = self.goal_pattern_class_num
+
         final_state_result = np.zeros(self.rack_size, dtype=int)
 
         state_level = self.state_level
         class_level = self.class_level
+
         # selected_classes = np.random.choice(range(1, self.num_classes + 1), class_level, replace=False)
         selected_classes = class_level
+
         if selected_classes == (self.num_classes + 1):
             selected_classes = self._np_random.choice(range(1, self.num_classes + 1),
                                                       min(self.state_level, self.num_classes),
@@ -2347,6 +2528,7 @@ class RackStateScheduler3(RackStateScheduler):
         else:
             num_in_goal = state_level - self.evolve_level
             total_avaliable_num = np.prod(self.rack_size)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if num_in_goal > goal_pattern_class_num[i]:
@@ -2361,6 +2543,7 @@ class RackStateScheduler3(RackStateScheduler):
                     p = inds[self._np_random.choice(len(inds), num_in_goal, replace=False)]
                     final_state_result[p[:, 0], p[:, 1]] = i + 1
                     total_avaliable_num -= len(p)
+
             # for i in range(self.num_classes):
             for i in [selected_classes - 1]:
                 if total_avaliable_num <= self.evolve_level:
@@ -2370,10 +2553,12 @@ class RackStateScheduler3(RackStateScheduler):
                 final_state_result[p[:, 0], p[:, 1]] = i + 1
                 total_avaliable_num -= len(p)
                 return RackState(final_state_result)
+
         selected_tube = [_ for _ in selected_classes]
         possible_tube_add_num = state_level - len(selected_tube)
         selected_classes_indices = selected_classes - 1
         selected_tube_tmp = []
+
         if possible_tube_add_num > 0:
             for ind in selected_classes_indices:
                 remain_num = goal_pattern_class_num[ind] - 1
@@ -2382,7 +2567,9 @@ class RackStateScheduler3(RackStateScheduler):
                 selected_tube_tmp += [ind + 1] * remain_num
         selected_tube = self._np_random.choice(selected_tube_tmp, possible_tube_add_num,
                                                replace=False).tolist() + selected_tube
+
         pattern_is_done = False
+
         while not pattern_is_done:
             coords = self._np_random.choice(np.prod(self.rack_size), size=len(selected_tube), replace=False)
             coords = np.array(np.unravel_index(coords, self.rack_size)).T
@@ -2391,7 +2578,9 @@ class RackStateScheduler3(RackStateScheduler):
                 break
             else:
                 final_state_result = np.zeros(self.rack_size, dtype=int)
+
         return RackState(final_state_result)
+
         # max_len = len(np.where(goalpattern_ravel > 0)[0]) + 1
         # feasible_diff = min(max_len, self.state_level)
         # min_obj_num = self.state_level
@@ -2417,8 +2606,10 @@ class RackStateScheduler3(RackStateScheduler):
         goal_pattern_np = np.array(goal_pattern)
         goalpattern_ravel = goal_pattern_np.ravel()
         goal_pattern_class_num = np.zeros(self.num_classes, dtype=int)
+
         for i in range(self.num_classes):
             goal_pattern_class_num[i] = len(np.where(goalpattern_ravel == (i + 1))[0])
+
         if self.is_goalpattern_fixed:
             self.goal_pattern_class_num = goal_pattern_class_num
             self.goal_pattern_np = goal_pattern_np
@@ -2430,16 +2621,19 @@ class RackStateScheduler3(RackStateScheduler):
             total_goal_num = len(np.where(goal_pattern_np > 0)[0])
             total_class_level = self.num_classes + 1
             is_update = True
+
             while 1:
                 # if state level is larger than the total goal num => break
                 if state_level > total_goal_num:
                     break
+
                 # state level, goal level
                 if is_update:
                     self.training_plan[training_level] = [state_level, class_level, evolve_level]
                 is_update = True
                 training_level += 1
                 class_level += 1
+
                 # class level 超过num class =》 reset class =》 reset evolve =》 reset state
                 if class_level > self.num_classes:
                     # 如果 evolve_level 等于 state_level (说明state_level要加1了), class_level += 1
@@ -2466,6 +2660,7 @@ class RackStateScheduler3(RackStateScheduler):
     def update_evolve_num(self):
         need_update = False
         self.evolve_level += 1
+
         if self.evolve_level > self.state_level:
             self.evolve_level = 1
             need_update = True
@@ -2473,6 +2668,7 @@ class RackStateScheduler3(RackStateScheduler):
 
     def update_training_level(self):
         cls_level = self.class_level
+
         if self.update_evolve_num():
             st_level_u = self.update_state_level()
         else:
@@ -2486,6 +2682,7 @@ class StripeRackStateScheduler(RackStateScheduler):
             chosed_ids = self._np_random.choice(self.class_ids, self.num_classes, replace=False)
         else:
             chosed_ids = self._np_random.choice(self.class_ids, min(self.class_level, self.num_classes), replace=False)
+
         # print("chosed ids", chosed_ids)
         # goal_pattern = self._np_random.randint(0, self.goal_level + 1, size=self.rack_size)
         num_n_pattern = max(int(self.state_level / self.rack_size[0]) + 1, self.class_level)
@@ -2502,6 +2699,7 @@ class StripeRackStateScheduler(RackStateScheduler):
         goal_pattern[res_goal_pattern_idx] = self._np_random.choice(chosed_ids,
                                                                     size=len(res_goal_pattern_idx), )
         goal_pattern[self._np_random.choice(res_goal_pattern_idx, size=p_0, replace=False)] = 0
+
         # print(goal_pattern)
         if np.all(goal_pattern == goal_pattern[0]):
             goal_pattern[self._np_random.randint(len(goal_pattern))] = 0
@@ -2520,12 +2718,14 @@ class GoalRackStateScheduler(RackStateScheduler):
         else:
             chosed_ids = self._np_random.choice(self.class_ids, min(self.class_level, self.num_classes), replace=False)
             num_goals = self.state_level
+
         # print("chosed ids", chosed_ids)
         # goal_pattern = self._np_random.randint(0, self.goal_level + 1, size=self.rack_size)
 
         rack = np.zeros(np.prod(self.rack_size), dtype=int)
         goal_pattern_necessary_idx = self._np_random.choice(np.arange(np.prod(self.rack_size)), size=num_goals,
                                                             replace=False)
+
         if len(chosed_ids) >= num_goals:
             rack[goal_pattern_necessary_idx] = self._np_random.choice(chosed_ids, size=num_goals, replace=False)
         else:
@@ -2606,6 +2806,7 @@ class GoalRackStateScheduler3(RackStateScheduler):
         # else:
         rack = np.zeros(np.prod(self.rack_size), dtype=int)
         goal_pattern_necessary_idx = np.where(self.generate_connected_grid(*self.rack_size, num_goals).flatten())[0]
+
         if len(chosed_ids) >= num_goals:
             rack[goal_pattern_necessary_idx] = self._np_random.choice(chosed_ids, size=num_goals, replace=False)
         else:
@@ -2626,6 +2827,7 @@ class GoalRackStateScheduler2(GoalRackStateScheduler):
         rack = np.zeros(np.prod(self.rack_size), dtype=int)
         goal_pattern_necessary_idx = self._np_random.choice(np.arange(np.prod(self.rack_size)), size=num_goals,
                                                             replace=False)
+
         if len(chosed_ids) >= num_goals:
             rack[goal_pattern_necessary_idx] = self._np_random.choice(chosed_ids, size=num_goals, replace=False)
         else:
@@ -2643,10 +2845,12 @@ class GoalRackStateScheduler2(GoalRackStateScheduler):
             goal_pattern_np = goal_pattern
         else:
             raise Exception("Undefined Goal pattern")
+
         goalpattern_ravel = goal_pattern_np.ravel()
         state = goalpattern_ravel.copy()
         state_filled_inds = np.where(state > 0)[0]
         state_empty_inds = np.where(state == 0)[0]
+
         if len(state_filled_inds) < self.state_level or len(state_empty_inds) < self.state_level:
             raise Exception("Infeasible Goal Pattern")
         state_filled_inds_selected = self._np_random.choice(state_filled_inds, size=self.state_level, replace=False)
@@ -2750,6 +2954,7 @@ if __name__ == "__main__":
     goal = rss.gen_goal()
     if len(np.unique(goal.state)) <= 1:
         exit(-1)
+
     state = rss.gen_state(goal)
     a = TubePuzzle(elearray=state.state, goalpattern=goal.state)
     is_find, path = a.atarSearch(infeasible_dict={}, max_iter_cnt=300)
@@ -2794,11 +2999,13 @@ if __name__ == "__main__":
         action_vec = np.zeros(2500)
         action_vec[:] = -np.inf
         path_traj, reward_traj, action_traj = env.evaluate_traj(path, goal, toggle_debug=True)
+
         for i in range(len(action_traj)):
             label = action_vec.copy()
             label[action_traj[i]] = reward_traj[i]
             dataset.append([path_traj[i], goal, label])
         print("-k" * 30)
+
         for idx in range(len(dataset)):
             state, goal, label = dataset[idx]
             state = state

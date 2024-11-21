@@ -58,6 +58,7 @@ def mask_2D(mask_size=3):
 def get_possible_actions_condition_set(node: np.ndarray, conditional_set: np.ndarray):
     node = node.copy()
     node_pad = np.pad(node, pad_width=2)
+
     # [mask_ucbc, mask_crcl, mask_ul, mask_ur, mask_bl, mask_br]
     # [ 1, 1, 1, 1, 1, 1, 1]
     condition_ucbc = conditional_set[..., 0]
@@ -66,28 +67,37 @@ def get_possible_actions_condition_set(node: np.ndarray, conditional_set: np.nda
     condition_ur = conditional_set[..., 3]
     condition_bl = conditional_set[..., 4]
     condition_br = conditional_set[..., 5]
+
     cg_ucbc = ss.correlate2d(node, mask_ucbc)[1:-1, 1:-1]
     cg_ucbc[condition_ucbc == 0] = 10
+
     cg_crcl = ss.correlate2d(node, mask_crcl)[1:-1, 1:-1]
     cg_crcl[condition_crcl == 0] = 10
+
     cg_ul = ss.correlate2d(node, mask_ul)[1:-1, 1:-1]
     cg_ul[condition_ul == 0] = 10
+
     cg_ur = ss.correlate2d(node, mask_ur)[1:-1, 1:-1]
     cg_ur[condition_ur == 0] = 10
+
     cg_bl = ss.correlate2d(node, mask_bl)[1:-1, 1:-1]
     cg_bl[condition_bl == 0] = 10
+
     cg_br = ss.correlate2d(node, mask_br)[1:-1, 1:-1]
     cg_br[condition_br == 0] = 10
 
     cf = ((cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)) * (
             node == 0)
+
     cg_ucbc[node == 0] = -1
     cg_crcl[node == 0] = -1
     cg_ul[node == 0] = -1
     cg_ur[node == 0] = -1
     cg_bl[node == 0] = -1
     cg_br[node == 0] = -1
+
     cg = (cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)
+
     fillable_coord = np.vstack(np.where(cf)).T
     movable_coord = np.vstack(np.where(cg)).T
 
@@ -95,14 +105,17 @@ def get_possible_actions_condition_set(node: np.ndarray, conditional_set: np.nda
     fillable_possible_actions = np.concatenate((
         np.repeat(np.arange(len(movable_coord)), len(fillable_coord))[..., None],
         fillable_coord[movable_id_fillable_indices]), axis=1)
+
     # 1. Extract a 5x5 matrices
     offsets = mask_2D(2) + 2
     fill = (offsets + movable_coord[:, None]).reshape(-1, 2)
     arr5x5 = node_pad[fill[:, 0], fill[:, 1]].reshape(-1, 5, 5)
+
     # 2. Choose the slot to be checked after picking the tube
     arr3x3 = arr5x5[:, 1:-1, 1:-1]
     arr3x3_0_coord = np.vstack(np.where(arr3x3 == 0)).T
     arr5x5[:, 2, 2] = 0
+
     offsets = mask_2D(1) + 1
     fill = (np.concatenate((np.zeros((len(offsets), 1), dtype=int), offsets), axis=1) + arr3x3_0_coord[:,
                                                                                         None]).reshape(-1, 3)
@@ -131,27 +144,33 @@ def get_possible_actions_condition_set(node: np.ndarray, conditional_set: np.nda
 
     fillable_acts = act[act[:, 0].argsort()]
     movable_acts = movable_coord[fillable_acts[:, 0]]
+
     return np.concatenate((movable_acts, fillable_acts[:, 1:]), axis=1), movable_coord, fillable_acts
 
 
 def get_possible_actions(node: np.ndarray):
     node = node.copy()
     node_pad = np.pad(node, pad_width=2)
+
     cg_ucbc = ss.correlate2d(node, mask_ucbc)[1:-1, 1:-1]
     cg_crcl = ss.correlate2d(node, mask_crcl)[1:-1, 1:-1]
     cg_ul = ss.correlate2d(node, mask_ul)[1:-1, 1:-1]
     cg_ur = ss.correlate2d(node, mask_ur)[1:-1, 1:-1]
     cg_bl = ss.correlate2d(node, mask_bl)[1:-1, 1:-1]
     cg_br = ss.correlate2d(node, mask_br)[1:-1, 1:-1]
+
     cf = ((cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)) * (
             node == 0)
+
     cg_ucbc[node == 0] = -1
     cg_crcl[node == 0] = -1
     cg_ul[node == 0] = -1
     cg_ur[node == 0] = -1
     cg_bl[node == 0] = -1
     cg_br[node == 0] = -1
+
     cg = (cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)
+
     fillable_coord = np.vstack(np.where(cf)).T
     movable_coord = np.vstack(np.where(cg)).T
 
@@ -159,14 +178,17 @@ def get_possible_actions(node: np.ndarray):
     fillable_possible_actions = np.concatenate((
         np.repeat(np.arange(len(movable_coord)), len(fillable_coord))[..., None],
         fillable_coord[movable_id_fillable_indices]), axis=1)
+
     # 1. Extract a 5x5 matrices
     offsets = mask_2D(2) + 2
     fill = (offsets + movable_coord[:, None]).reshape(-1, 2)
     arr5x5 = node_pad[fill[:, 0], fill[:, 1]].reshape(-1, 5, 5)
+
     # 2. Choose the slot to be checked after picking the tube
     arr3x3 = arr5x5[:, 1:-1, 1:-1]
     arr3x3_0_coord = np.vstack(np.where(arr3x3 == 0)).T
     arr5x5[:, 2, 2] = 0
+
     offsets = mask_2D(1) + 1
     fill = (np.concatenate((np.zeros((len(offsets), 1), dtype=int), offsets), axis=1) + arr3x3_0_coord[:,
                                                                                         None]).reshape(-1, 3)
@@ -195,59 +217,88 @@ def get_possible_actions(node: np.ndarray):
 
     fillable_acts = act[act[:, 0].argsort()]
     movable_acts = movable_coord[fillable_acts[:, 0]]
+
     return np.concatenate((movable_acts, fillable_acts[:, 1:]), axis=1), movable_coord, fillable_acts
 
 
 def get_fillable_movable(node: np.ndarray):
     node = node.copy()
+
     cg_ucbc = ss.correlate2d(node, mask_ucbc)[1:-1, 1:-1]
     cg_crcl = ss.correlate2d(node, mask_crcl)[1:-1, 1:-1]
     cg_ul = ss.correlate2d(node, mask_ul)[1:-1, 1:-1]
     cg_ur = ss.correlate2d(node, mask_ur)[1:-1, 1:-1]
     cg_bl = ss.correlate2d(node, mask_bl)[1:-1, 1:-1]
     cg_br = ss.correlate2d(node, mask_br)[1:-1, 1:-1]
+
     cf = ((cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)) * (
             node == 0)
+
     cg_ucbc[node == 0] = -1
     cg_crcl[node == 0] = -1
     cg_ul[node == 0] = -1
     cg_ur[node == 0] = -1
     cg_bl[node == 0] = -1
     cg_br[node == 0] = -1
+
     cg = (cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)
+
     fillable_matrix = cf.astype(int)
     movable_matrix = cg.astype(int)
+
     return fillable_matrix, movable_matrix
 
 
 def get_satisfied_constraints(node_3x3: np.ndarray) -> list:
+    """
+        Calculate the satisfied constraints for a 3x3 node.
+
+        Arguments
+        ---------
+        node_3x3: np.ndarray
+            A 3x3 numpy array representing the node.
+
+        Returns
+        -------
+        constraints: np.ndarray
+            A boolean array indicating which constraints are satisfied.
+        """
+
     node = node_3x3.copy()
+
     cg_ucbc = np.sum(node * mask_ucbc) == 0
     cg_crcl = np.sum(node * mask_crcl) == 0
     cg_ul = np.sum(node * mask_ul) == 0
     cg_ur = np.sum(node * mask_ur) == 0
     cg_bl = np.sum(node * mask_bl) == 0
     cg_br = np.sum(node * mask_br) == 0
+
     return np.array([cg_ucbc, cg_crcl, cg_ul, cg_ur, cg_bl, cg_br], dtype=bool)
 
 
 def get_fillable(node: np.ndarray):
+
     node = node.copy()
+
     cg_ucbc = ss.correlate2d(node, mask_ucbc)[1:-1, 1:-1]
     cg_crcl = ss.correlate2d(node, mask_crcl)[1:-1, 1:-1]
     cg_ul = ss.correlate2d(node, mask_ul)[1:-1, 1:-1]
     cg_ur = ss.correlate2d(node, mask_ur)[1:-1, 1:-1]
     cg_bl = ss.correlate2d(node, mask_bl)[1:-1, 1:-1]
     cg_br = ss.correlate2d(node, mask_br)[1:-1, 1:-1]
+
     cf = ((cg_ucbc == 0) + (cg_crcl == 0) + (cg_ul == 0) + (cg_ur == 0) + (cg_bl == 0) + (cg_br == 0)) * (
             node == 0)
+
     fillable_matrix = cf.astype(int)
+
     return fillable_matrix
 
 
 def isdone(node, goalpattern):
     if np.any((goalpattern - node)[node > 0]):
         return False
+
     return True
 
 
@@ -313,31 +364,39 @@ def check_feasible(elearray, goal_patten):
     # is fillable and movable
     if np.sum(fillable) == 0 or np.sum(movable) == 0:
         return False
+
     for i in range(1, np.max(elearray) + 1):
         if np.count_nonzero(goal_patten == i) < np.count_nonzero(elearray == i):
             return False
+
     return True
 
 
 def get_random_states(rack_size, goalpattern, obj_num=None, min_obj_num=None, np_random=None, max_num_class=None):
     if np_random is None:
         np_random = np.random
+
     rack_len = np.prod(rack_size)
     goalpattern_ravel = goalpattern.ravel()
     goalpattern_classes = np.unique(goalpattern_ravel)
     goalpattern_classes = goalpattern_classes[goalpattern_classes > 0]
+
     if max_num_class is not None:
         max_num_class = min(len(goalpattern_classes), max_num_class)
         if max_num_class == len(goalpattern_classes):
             max_num_class = None
+
     goal_slot_idx = np.where(goalpattern_ravel > 0)[0]
     goal_slot_len = len(goal_slot_idx)
+
     if obj_num is None:
         obj_num = len(goal_slot_idx) + 1
     if min_obj_num is None:
         min_obj_num = 1
+
     obj_num = min(len(goal_slot_idx) + 1, obj_num)
     min_obj_num = max(1, min_obj_num)
+
     while True:
         if min_obj_num == obj_num:
             num_random = min_obj_num
@@ -348,6 +407,7 @@ def get_random_states(rack_size, goalpattern, obj_num=None, min_obj_num=None, np
                 num_random = np_random.randint(min_obj_num, obj_num)
         random_choiced_id = np_random.choice(range(rack_len), size=num_random, replace=False)
         elearray = np.zeros(rack_len)
+
         # select from goal
         if max_num_class is None:
             goal_selected = goal_slot_idx[np_random.choice(range(goal_slot_len), size=num_random, replace=False)]
@@ -356,24 +416,29 @@ def get_random_states(rack_size, goalpattern, obj_num=None, min_obj_num=None, np
             classes_selected = np_random.choice(goalpattern_classes, max_num_class, replace=False)
             elearray[random_choiced_id] = np_random.choice(classes_selected, num_random, replace=True)
         elearray = elearray.reshape(rack_size).astype(int)
+
         if not check_feasible(elearray, goalpattern):
             continue
+
         # all the compo
         # is not done and not repeat
         if not isdone(elearray, goalpattern):
             # if not check_is_repeat(np.array(state_trained), elearray):
             break
+
     # state_trained.append(elearray)
     return elearray
-
 
 def get_random_goal_pattern(num_classes, rack_size, np_random=None):
     if np_random is None:
         np_random = np.random
+
     while True:
         goal_pattern = np_random.randint(0, num_classes + 1, size=rack_size)
+
         if np.sum(goal_pattern) == 0 or np.all(goal_pattern == goal_pattern[0]):
             continue
+
         return goal_pattern
 
 
@@ -386,21 +451,26 @@ def seperate_matrix_entry(elarray: Optional[np.ndarray]):
         return None
     elarraydim = elarray.shape[0] * elarray.shape[1]
     output_array = np.zeros((elarraydim, elarray.shape[0], elarray.shape[1]))
+
     for i in range(elarraydim):
         mask = np.zeros(elarraydim)
         mask[i] = 1
         output_array[i] = mask.reshape(elarray.shape[0], elarray.shape[1]) * elarray
+
     return output_array
 
 
 def seperate_matrix_layer(elarray, num_of_classes):
     output_array = np.zeros((num_of_classes, elarray.shape[0], elarray.shape[1]))
+
     for i in range(1, num_of_classes + 1):
         output_array[i - 1][elarray == i] = 1
+
     return output_array
 
 
 def merge_matrix_layer(elarray, num_of_classes):
     boardcaster = np.repeat(np.arange(0, num_of_classes) + 1, np.prod(elarray.shape) / num_of_classes).reshape(
         elarray.shape)
+
     return np.sum(elarray * boardcaster, axis=0)

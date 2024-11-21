@@ -25,9 +25,11 @@ def action_between_states(s_current, s_next):
     move = s_next - s_current
     move_to_idx = np.where(move > 0)
     move_from_idx = np.where(move < 0)
+
     rack_size = s_current.shape
     pick_id_int = move_from_idx[0] * rack_size[1] + move_from_idx[1]
     place_id_int = move_to_idx[0] * rack_size[1] + move_to_idx[1]
+
     action_ids = place_id_int * np.prod(rack_size) + pick_id_int
     return action_ids.tolist()
 
@@ -35,74 +37,97 @@ def action_between_states(s_current, s_next):
 def get_suspicious_action_id(path, goal_pattern):
     path_len = len(path)
     suspicious_id = []
+
     for state_id in range(0, path_len - 1):
         s_i, s_ii = path[state_id], path[state_id + 1]
         move_map = s_ii - s_i
+
         move_to_idx = np.where(move_map > 0)
         move_from_idx = np.where(move_map < 0)
+
         is_move_to_pattern = goal_pattern[move_to_idx] == s_ii[move_to_idx]
         is_move_in_pattern = goal_pattern[move_to_idx] == goal_pattern[move_from_idx] and goal_pattern[move_to_idx] == \
                              s_ii[move_to_idx]
+
         if (not is_move_to_pattern) or is_move_in_pattern:
             suspicious_id.append(state_id + 1)
+
     return suspicious_id
 
 
 def refine_immediate_redundant_action(path, goal_pattern, infeasible_dict):
     is_continue_iter = True
     path_r = copy.deepcopy(path)
+
     while is_continue_iter:
         is_continue_iter = False
         check_list = get_suspicious_action_id(path_r, goal_pattern)
+
         if len(check_list) == 0:
             break
+
         while len(check_list) > 0:
             check_id = check_list[0]
             if len(path_r) < 3:
                 break
+
             if check_id >= len(path_r) - 1:  # at the end
                 if np.array_equal(path_r[check_id - 1], path_r[check_id]):
                     path_r.pop(check_id)
                 check_list.pop(0)
+
                 continue
+
             s_0, s_1, s_2 = path_r[check_id - 1], path_r[check_id], path_r[check_id + 1]
             move_map = s_2 - s_0
             move_ids = np.vstack(np.where(move_map != 0)).T
+
             if len(move_ids) <= 2:
                 if len(move_ids) == 2:
                     if action_between_states(s_0, s_2)[0] in infeasible_dict.get(str(s_0), []):
                         check_list.pop(0)
                         continue
+
                 is_continue_iter = True
                 # remove the redundant move
                 path_r.pop(check_id)
+
                 # update the suspicious action id
                 for _ in range(1, len(check_list)):
                     check_list[_] = check_list[_] - 1
+
             check_list.pop(0)
+
     return path_r
 
 
 def refine_eventually_redundant_action(path, goal_pattern, infeasible_dict):
     path_r = path.copy()
     check_list = get_suspicious_action_id(path_r, goal_pattern)
+
     while len(check_list) > 0:
         check_id = check_list[0] - 1
         end_id = len(path_r) - 1
+
         s_i, s_i_end = path_r[check_id], path_r[end_id]
         tp = TubePuzzle(s_i.copy())
         tp.goalpattern = s_i_end.copy()
+
         is_finished, refined_tmp_path = tp.atarSearch(infeasible_dict=infeasible_dict, max_iter_cnt=50)
+
         if is_finished and len(refined_tmp_path) < end_id - check_id:
             path_r = path_r[:check_id] + [_ for _ in refined_tmp_path]
             break
+
         check_list.pop(0)
+
     return path_r
 
 
 def refine_redundant_action(path, goal_pattern, infeasible_dict):
     # print("Start refine immediate redundant action")
     path_r = refine_immediate_redundant_action(path, goal_pattern, infeasible_dict)
+
     # print("Start refine eventually redundant action")
     if len(path_r) < 8:
         path_r = refine_eventually_redundant_action(path_r, goal_pattern, infeasible_dict)
@@ -119,10 +144,12 @@ class DQNSolver():
                  num_tube_classes=3,
                  rack_size=(5, 10),
                  seed=777):
+
         # set up environment
         self.rack_size = rack_size
         action_space_dim = np.prod(rack_size) ** 2
         observation_space_dim = (1, *rack_size)
+
         self.env = self._init_env(num_tube_classes, seed, action_space_dim, observation_space_dim)
         self.net = self._init_net(model_path, observation_space_dim, action_space_dim, device)
         self.root = None
@@ -143,6 +170,7 @@ class DQNSolver():
             model[0] = net
         else:
             net = model[0]
+
         net.load_state_dict(torch.load(model_path))
         return net
 
@@ -153,11 +181,13 @@ class DQNSolver():
               infeasible_local_pattern=None,
               toggle_result=False,
               iter_num=300):
+
         # print("--- Start Task Planning ---")
         if infeasible_dict is None:
             infeasible_dict = {}
         if infeasible_local_pattern is None:
             infeasible_local_pattern = {}
+
         state = self.env.reset_state_goal(current_state, goal_pattern)
         root, paths = MCTS(state=state,
                            env=self.env,
@@ -167,11 +197,14 @@ class DQNSolver():
                            infeasible_dict=infeasible_dict,
                            infeasible_local_pattern=infeasible_local_pattern,
                            is_debug=toggle_result)
+
         self.root = root
+
         if len(paths) > 0:
             shortest_path = paths[np.argmin([len(_) for _ in paths])][::-1]
             # refined_path = refine_path([_.state for _ in shortest_path], stride=max(int(len(shortest_path) / 5), 2), )
             shortest_path_np = [_.state for _ in shortest_path]
+
             # print("---- Start Refining Path ---")
             # r_shortest_path_np = refine_redundant_action(shortest_path_np, goal_pattern, infeasible_dict)
             fs.dump_pickle(shortest_path_np, "rm_state_debug", reminder=False)
@@ -186,6 +219,7 @@ class DQNSolver():
                 print(r_shortest_path_np)
                 drawer = RackStatePlot(goal_pattern)
                 drawer.plot_states(shortest_path_np, row=22)
+
             fs.dump_pickle([shortest_path_np, r_shortest_path_np, infeasible_dict], path='debug_path', reminder=False)
             return r_shortest_path_np
         else:
@@ -217,11 +251,13 @@ class DQNSolverTwoRack():
                  rack_size_1=(5, 10),
                  rack_size_2=(5, 10),
                  seed=777):
+
         # set up environment
         two_rack_size = (rack_size_1[0] + rack_size_2[0] + 1,
                          max(rack_size_1[1], rack_size_2[1]))
         action_space_dim = np.prod(two_rack_size) ** 2
         observation_space_dim = (1, *two_rack_size)
+
         self.env = TwoRackArrangementEnv(from_rack_size=rack_size_1,
                                          to_rack_size=rack_size_2,
                                          num_classes=num_tube_classes,
@@ -242,9 +278,11 @@ class DQNSolverTwoRack():
               goal_pattern: np.ndarray,
               infeasible_dict=None,
               toggle_result=False):
+
         # print("--- Start Task Planning ---")
         if infeasible_dict is None:
             infeasible_dict = {}
+
         state = self.env.reset_state_goal(current_state, goal_pattern)
         root, paths = MCTS(state=state,
                            env=self.env,
@@ -253,13 +291,17 @@ class DQNSolverTwoRack():
                            lr=.95,
                            infeasible_dict=infeasible_dict,
                            is_debug=toggle_result)
+
         self.root = root
+
         if len(paths) > 0:
             shortest_path = paths[np.argmin([len(_) for _ in paths])][::-1]
             # refined_path = refine_path([_.state for _ in shortest_path], stride=max(int(len(shortest_path) / 5), 2), )
             shortest_path_np = [_.state for _ in shortest_path]
+
             # print("---- Start Refining Path ---")
             r_shortest_path_np = refine_redundant_action(shortest_path_np, goal_pattern, infeasible_dict)
+
             if toggle_result:
                 print("AA")
                 print(r_shortest_path_np)
@@ -333,6 +375,7 @@ class DQNSolver2(DQNSolver):
                            infeasible_local_pattern=infeasible_local_pattern,
                            is_debug=toggle_result)
         self.root = root
+
         if len(paths) > 0:
             shortest_path = paths[np.argmin([len(_) for _ in paths])][::-1]
             # refined_path = refine_path([_.state for _ in shortest_path], stride=max(int(len(shortest_path) / 5), 2), )
@@ -438,6 +481,7 @@ class D3QNSolver():
         self._env = self._init_env(self.goal_pattern)
         self.seed = seed
         self._history_states = []
+
         if toggle_init_net:
             self._net = self._init_net(SpecialistModels.model[agent_id],
                                        SpecialistModels.model_params.get(agent_id, None))
@@ -451,6 +495,7 @@ class D3QNSolver():
     def _init_env(self, goal_pattern):
         rack_size = goal_pattern.shape
         num_class = len(np.unique(goal_pattern[goal_pattern > 0]))
+
         env = create_fixe_env(rack_sz=rack_size,
                               goal_pattern=goal_pattern,
                               num_tube_class=num_class,
@@ -465,6 +510,7 @@ class D3QNSolver():
                           RackArrangementEnv), f'The env type should be RackArrangementEnv instead of {type(self._env)}'
         input_shape = self._env.observation_space_dim
         num_actions = self._env.action_space_dim
+
         if model_params_path is None:
             net = DDQN(input_shape,
                        num_actions,
@@ -484,6 +530,7 @@ class D3QNSolver():
                        num_fc_units=params['ddqn']['num_fc_units'],
                        num_out_cnn_layers=params['ddqn']['num_out_cnn_layers']
                        )
+
         net.load_state_dict(torch.load(model_path)['dqn_state_dict'])
         net.to(self.device)
         return net
@@ -494,6 +541,7 @@ class D3QNSolver():
                      toggle_show: bool = False,
                      max_iter=500):
         state = self._env.reset()
+
         return self._solve(state,
                            delete_constraints,
                            condition_set=condition_set,
@@ -507,15 +555,18 @@ class D3QNSolver():
                infeasible_action_dict=None,
                toggle_Astar_refiner=True,
                toggle_show=False):
+
         if delete_constraints is None:
             delete_constraints = []
         if infeasible_action_dict is None:
             infeasible_action_dict = {}
+
         state = RackState(state)
         st_list = [state]
         rew_list = []
         is_path_found = False
         a = time.time()
+
         for t in itertools.count(1):
             if condition_set is not None:
                 feasible_action = state.get_feasible_action_condition_set(condition_set)
@@ -531,21 +582,26 @@ class D3QNSolver():
                                                           device=self.device,
                                                           toggle_no_repeat=True,
                                                           toggle_return_action_value=True, )
+
             if action is None or action < 0:
                 next_state, reward, done = None, -10, True
             else:
                 next_state, reward, done, _ = self._env.step(action, toggle_debug=False)
+
             state = next_state  # state = next_state
             st_list.append(np.array(state))
             rew_list.append(reward)
+
             if done:
                 if reward > 0:
                     # print("Solution Found")
                     is_path_found = True
                 break
+
             if t >= max_iter:
                 print("Exceeds maximum iter")
                 break
+
         if not is_path_found:
             if toggle_show:
                 rsp = RackStatePlot(self.goal_pattern)
@@ -557,8 +613,10 @@ class D3QNSolver():
                     plot)
                 cv2.waitKey(0)
             return [], []
+
         raw_path = [np.array(_) for _ in st_list]
         path_len_1 = len(raw_path)
+
         # A* refiner
         if toggle_Astar_refiner:
             path = rm_ras_actions_recur3_6(raw_path,
@@ -573,7 +631,8 @@ class D3QNSolver():
             # print(f"Saved path length is {path_len_1 - path_len_2}: raw path: {path_len_1}, refined path: {path_len_2}")
         else:
             path = raw_path
-        # --
+
+
         b = time.time()
         if toggle_show:
             rsp = RackStatePlot(self.goal_pattern)
@@ -601,12 +660,14 @@ class D3QNSolver():
               toggle_Astar_refiner=True,
               toggle_show=False,
               ):
+
         # print("--- Start Task Planning ---")
         # repeat actions:
         if infeasible_action_dict is None:
             infeasible_action_dict = {}
         if infeasible_action is None:
             infeasible_action = []
+
         repeat_acts = []
         for _ in self._history_states:
             act = self._env.action_between_states_constraint_free(init_state, _)
@@ -643,14 +704,17 @@ class D3QNSolver():
             satisfied_cons_mask = get_satisfied_constraints(pick_local_region)
             condition_set[tuple(pick_slot_id)] = np.maximum(condition_set[tuple(pick_slot_id)] - satisfied_cons_mask, 0)
             return True
+
         if is_place_feasible is None:
             return False
+
         if is_place_feasible is False:
             place_local_region = get_3x3_local_state(state, place_slot_id)
             satisfied_cons_mask = get_satisfied_constraints(place_local_region)
             condition_set[tuple(place_slot_id)] = np.maximum(condition_set[tuple(place_slot_id)] - satisfied_cons_mask,
                                                              0)
             return True
+
         raise Exception("RRT Failed")
         state_str = str(state)
         if state_str not in infeasible_action_dict:
@@ -708,6 +772,7 @@ class D3QNSolver():
             for j in range(rack_sz[1]):
                 if i == coord[0] and j == coord[1]:
                     continue
+
         return self._env.to_action(rack_sz, np.repeat(coord.reshape(1, -1), len(combination_2d), axis=0),
                                    combination_2d).tolist()
 
@@ -718,9 +783,11 @@ class D3QNSolver():
         move = s_next - s_current
         move_to_idx = np.argwhere(move > 0)
         move_from_idx = np.argwhere(move < 0)
+
         if remove_pick_action_group:
             move_from_idx = np.dstack(
                 np.meshgrid(np.arange(self._env.rack_size[0]), np.arange(self._env.rack_size[1]))).reshape(-1, 2)
+
         action_ids = self._env.to_action(self._env.rack_size,
                                          np.repeat(move_to_idx, repeats=len(move_from_idx), axis=0),
                                          move_from_idx)

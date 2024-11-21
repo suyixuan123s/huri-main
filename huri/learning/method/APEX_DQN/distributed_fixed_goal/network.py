@@ -13,6 +13,9 @@ import math
 from typing import NamedTuple, Tuple
 import numpy as np
 
+from huri.learning.method.APEX_DQN.distributed.network import RNDModel
+from huri.learning.method.APEX_DQN.distributed_2.network import DDQN
+
 
 def calc_conv2d_output(h_w, kernel_size=1, stride=1, pad=0, dilation=1):
     """takes a tuple of (h,w) and returns a tuple of (h,w)"""
