@@ -63,6 +63,15 @@ if __name__ == "__main__":
             print(repr(rack.rack_status))
             moved_tube, moved_tube_homo_gl_goal = rack.remove_slot(slot_id=to_slot_id)
 
+
+    # base = boost_base(base)
+    # base.boost.add_task(zoombase, args=[base, np.array([0, 0, 1])], timestep=0.2)
+    # base.boost.add_task(lambda task: base.boost.screen_shot("grasps"), timestep=0.4)
+    # base.boost.add_task(lambda task: exit(), timestep=0.6)
+    #
+    # base.run()
+    # exit()
+
     # 初始化夹持器
     grpr = YumiGripper(enable_cc=True, )
     grpr.fix_to(robot_arm.jnts[-1]['gl_posq'], rotmat=robot_arm.jnts[-1]['gl_rotmatq'])
